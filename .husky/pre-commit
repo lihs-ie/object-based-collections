@@ -1,0 +1,4 @@
+#!/bin/bash
+
+pnpm run testrun
+pnpm exec lint-staged
