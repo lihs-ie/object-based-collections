@@ -6,7 +6,7 @@ import {
   nullable,
   Optional,
   Some,
-} from '../../../collections/optional';
+} from '../../../collections/optional/common';
 
 const presentValues = {
   string: 'hello world',
@@ -273,6 +273,12 @@ describe('optional/common', () => {
       const optional = nullable(null);
 
       expect(optional.isPresent()).toBeFalsy();
+    });
+
+    it('returns Optional-object when value is undefined', () => {
+      const optional = nullable(undefined);
+
+      expect(optional).toBeDefined();
     });
   });
 });
