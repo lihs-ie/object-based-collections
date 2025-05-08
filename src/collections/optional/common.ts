@@ -47,8 +47,8 @@ export interface Optional<T> {
 
 export const empty = <T>(): Optional<T> => Optional<T>(undefined);
 
-export const nullable = <T>(value: T | null): Optional<T> => {
-  if (value === null) {
+export const nullable = <T>(value?: T | null): Optional<T> => {
+  if (value === null || value === undefined) {
     return empty<T>();
   }
 
