@@ -135,7 +135,7 @@ describe('set/common', () => {
         });
     });
 
-    it('remove return a new empty ImmutableSet if the set is empty', () => {
+    it('remove returns a new empty ImmutableSet if the set is empty', () => {
       const set = ImmutableSet<number>();
 
       const actual = set.remove(1);
