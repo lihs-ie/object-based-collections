@@ -1,9 +1,13 @@
 import { type Hasher, HAMTNode, LeafNode, BitmapIndexedNode } from '../hamt';
+import { ImmutableList } from '../list';
+import { ImmutableMap, MapFromArray } from '../map';
 import { NullableOptional, Optional } from '../optional';
 
 export interface ImmutableSet<K> {
   size: () => number;
   toArray: () => K[];
+  toList: () => ImmutableList<K>;
+  toMap: () => ImmutableMap<number, K>;
   isEmpty: () => boolean;
   isNotEmpty: () => boolean;
   add: (key: K) => ImmutableSet<K>;
@@ -11,6 +15,7 @@ export interface ImmutableSet<K> {
   remove: (key: K) => ImmutableSet<K>;
   contains: (key: K) => boolean;
   find: (predicate: (key: K) => boolean) => Optional<K>;
+  reduce: <R>(callback: (accumulator: R, key: K) => R, initial: R) => R;
   map: <R>(mapper: (key: K) => R) => ImmutableSet<R>;
   filter: (predicate: (key: K) => boolean) => ImmutableSet<K>;
   forEach: (callback: (key: K) => void) => void;
@@ -25,6 +30,14 @@ export const ImmutableSet =
   (hasher: Hasher) =>
   <K>(root: HAMTNode<K, Void> | null = null): ImmutableSet<K> => {
     const toArray = (): K[] => root?.toArray().map(([key]) => key) || [];
+
+    const toList = (): ImmutableList<K> => ImmutableList(toArray());
+
+    const toMap = (): ImmutableMap<number, K> => {
+      return MapFromArray(hasher)(
+        toArray().map((item, index) => [index, item]),
+      );
+    };
 
     const size = (): number => toArray().length;
 
@@ -76,6 +89,15 @@ export const ImmutableSet =
       return NullableOptional(root?.find(predicate)?.key());
     };
 
+    const reduce = <R>(
+      callback: (accumulator: R, key: K) => R,
+      initial: R,
+    ): R => {
+      return toArray().reduce<R>((carry, key): R => {
+        return callback(carry, key);
+      }, initial);
+    };
+
     const map = <R>(mapper: (key: K) => R): ImmutableSet<R> => {
       const mapped = root?.toArray().map(([key]) => mapper(key)) || [];
 
@@ -109,6 +131,8 @@ export const ImmutableSet =
     return {
       size,
       toArray,
+      toList,
+      toMap,
       isEmpty,
       isNotEmpty,
       add,
@@ -116,6 +140,7 @@ export const ImmutableSet =
       remove,
       contains,
       find,
+      reduce,
       map,
       filter,
       forEach,

@@ -1,6 +1,11 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import { ImmutableList, ImmutableSet, createSetFromArray } from '../../..';
+import {
+  ImmutableList,
+  ImmutableMap,
+  ImmutableSet,
+  createSetFromArray,
+} from '../../..';
 
 describe('set/common', () => {
   describe('ImmutableSet', () => {
@@ -35,6 +40,45 @@ describe('set/common', () => {
 
       expect(actual1).toEqual(expect.arrayContaining(keys));
       expect(actual2).toEqual([]);
+    });
+
+    it('toList returns an ImmutableList of keys', () => {
+      const keys: number[] = Array.from({ length: 100 }, (_, index) => index);
+
+      const set1 = createSetFromArray(keys);
+      const set2 = ImmutableSet<number>();
+
+      const actual1 = set1.toList();
+      const actual2 = set2.toList();
+
+      expect(actual1).toBeDefined();
+      expectTypeOf(actual1).toEqualTypeOf<ImmutableList<number>>();
+      expect(actual2).toBeDefined();
+      expectTypeOf(actual2).toEqualTypeOf<ImmutableList<number>>();
+
+      expect(actual1.toArray()).toEqual(expect.arrayContaining(keys));
+      expect(actual2.toArray()).toEqual([]);
+    });
+
+    it('toMap returns an ImmutableMap of indexed-value', () => {
+      const keys: number[] = Array.from({ length: 100 }, (_, index) => index);
+
+      const set1 = createSetFromArray(keys);
+      const set2 = ImmutableSet<number>();
+
+      const actual1 = set1.toMap();
+      const actual2 = set2.toMap();
+
+      expect(actual1).toBeDefined();
+      expectTypeOf(actual1).toEqualTypeOf<ImmutableMap<number, number>>();
+      expect(actual2).toBeDefined();
+      expectTypeOf(actual2).toEqualTypeOf<ImmutableMap<number, number>>();
+
+      expect(actual2.toArray()).toEqual([]);
+
+      keys.forEach((key) => {
+        expect(actual1.contains(key)).toBeTruthy();
+      });
     });
 
     it('size returns the number of elements in the set', () => {
@@ -166,6 +210,50 @@ describe('set/common', () => {
       const set = createSetFromArray(keys);
 
       expect(set.contains(count + 1)).toBeFalsy();
+    });
+
+    it('find returns the first key that satisfies the predicate', () => {
+      const count = Math.floor(Math.random() * 100) + 1;
+      const keys: number[] = Array.from({ length: count }, (_, index) => index);
+
+      const set = createSetFromArray(keys);
+
+      const predicate = (key: number): boolean => key % 2 === 0;
+
+      const expected = keys.find(predicate);
+
+      const actual = set.find(predicate);
+
+      expect(actual.get()).toBe(expected);
+    });
+
+    it('find returns an empty Optional if no key satisfies the predicate', () => {
+      const count = Math.floor(Math.random() * 100) + 1;
+      const keys: number[] = Array.from({ length: count }, (_, index) => index);
+
+      const set = createSetFromArray(keys);
+
+      const predicate = (key: number): boolean => key > count;
+
+      const actual = set.find(predicate);
+
+      expect(actual.isPresent()).toBeFalsy();
+    });
+
+    it('reduce returns the accumulated value', () => {
+      const count = Math.floor(Math.random() * 100) + 1;
+
+      const keys: number[] = Array.from({ length: count }, (_, index) => index);
+
+      const set = createSetFromArray(keys);
+
+      const reducer = (carry: number, key: number): number => carry + key;
+
+      const expected = keys.reduce(reducer, 0);
+
+      const actual = set.reduce(reducer, 0);
+
+      expect(actual).toBe(expected);
     });
 
     it('map returns a new ImmutableSet with the keys mapped', () => {
