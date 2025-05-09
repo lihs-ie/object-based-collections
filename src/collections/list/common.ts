@@ -1,3 +1,4 @@
+import { NullableOptional } from '../optional';
 import { Optional } from '../optional/common';
 
 export interface ImmutableList<T> {
@@ -10,6 +11,8 @@ export interface ImmutableList<T> {
   remove: (value: T) => ImmutableList<T>;
   get: (index: number) => Optional<T>;
   find: (predicate: (value: T) => boolean) => Optional<T>;
+  first: () => Optional<T>;
+  last: () => Optional<T>;
   map: <R>(mapper: (value: T) => R) => ImmutableList<R>;
   filter: (predicate: (value: T) => boolean) => ImmutableList<T>;
   reduce: <R>(callback: (accumulator: R, value: T) => R, initial: R) => R;
@@ -64,6 +67,10 @@ export const ImmutableList = <T>(values: T[] = []): ImmutableList<T> => {
 
     return Optional(target);
   };
+
+  const first = (): Optional<T> => NullableOptional(items[0]);
+
+  const last = (): Optional<T> => NullableOptional(items[items.length - 1]);
 
   const map = <R>(mapper: (value: T) => R): ImmutableList<R> => {
     const mapped = items.map(mapper);
@@ -159,6 +166,8 @@ export const ImmutableList = <T>(values: T[] = []): ImmutableList<T> => {
     remove,
     get,
     find,
+    first,
+    last,
     map,
     filter,
     reduce,
