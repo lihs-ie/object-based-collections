@@ -1,6 +1,7 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import importPlugin from 'eslint-plugin-import';
+import unusedImports from 'eslint-plugin-unused-imports';
 
 const configs = tseslint.config(
   eslint.configs.recommended,
@@ -14,10 +15,12 @@ export default configs.map((config) => ({
   plugins: {
     import: importPlugin,
     '@typescript-eslint': tseslint.plugin,
+    'unused-imports': unusedImports,
   },
   rules: {
     ...config.rules,
     'no-unused-vars': 'off',
+    'unused-imports/no-unused-imports': 'error',
     '@typescript-eslint/no-unused-vars': [
       'warn',
       {

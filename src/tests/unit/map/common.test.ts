@@ -3,6 +3,7 @@ import { describe, it, expect, expectTypeOf } from 'vitest';
 import {
   ImmutableList,
   ImmutableMap,
+  ImmutableSet,
   Optional,
   createMapFromArray,
   createMapFromObject,
@@ -126,7 +127,7 @@ describe('map/common', () => {
       },
     );
 
-    it('toArray function returns array of tuples', () => {
+    it('toArray returns array of tuples', () => {
       const numbers: [number, number][] = [
         [1, 2],
         [3, 4],
@@ -142,7 +143,56 @@ describe('map/common', () => {
       expect(actual2).toEqual(numbers);
     });
 
-    it('size function returns number of elements in map', () => {
+    it('toObject returns object of key-value pairs', () => {
+      const numbers = createArrayItems<number, number>(10, (index) => [
+        index,
+        index * 2,
+      ]);
+
+      const map = createMapFromArray(numbers);
+
+      const actual = map.toObject();
+
+      const expected = Object.fromEntries(numbers);
+
+      expect(actual).toEqual(expected);
+    });
+
+    it('toList returns ImmutableList containing the map values', () => {
+      const numbers = createArrayItems<number, number>(10, (index) => [
+        index,
+        index * 2,
+      ]);
+
+      const expectedArray = numbers.map(([, value]) => value);
+
+      const map = createMapFromArray(numbers);
+
+      const actual = map.toList();
+
+      expectTypeOf(actual).toEqualTypeOf<ImmutableList<number>>();
+      expect(actual.size()).toBe(numbers.length);
+      expect(actual.toArray()).toEqual(expect.arrayContaining(expectedArray));
+    });
+
+    it('toSet returns ImmutableSet containing the map keys', () => {
+      const numbers = createArrayItems<number, number>(10, (index) => [
+        index,
+        index * 2,
+      ]);
+
+      const expectedArray = numbers.map(([key]) => key);
+
+      const map = createMapFromArray(numbers);
+
+      const actual = map.toSet();
+
+      expectTypeOf(actual).toEqualTypeOf<ImmutableSet<number>>();
+      expect(actual.size()).toBe(numbers.length);
+      expect(actual.toArray()).toEqual(expect.arrayContaining(expectedArray));
+    });
+
+    it('size returns number of elements in map', () => {
       const numbers: [number, number][] = [
         [1, 2],
         [3, 4],
@@ -158,7 +208,7 @@ describe('map/common', () => {
       expect(actual2).toBe(2);
     });
 
-    it('isEmpty function returns true if map is empty', () => {
+    it('isEmpty returns true if map is empty', () => {
       const numbers: [number, number][] = [
         [1, 2],
         [3, 4],
@@ -174,7 +224,7 @@ describe('map/common', () => {
       expect(actual2).toBeFalsy();
     });
 
-    it('isNotEmpty function returns true if map is not empty', () => {
+    it('isNotEmpty returns true if map is not empty', () => {
       const numbers: [number, number][] = [
         [1, 2],
         [3, 4],
@@ -339,6 +389,54 @@ describe('map/common', () => {
       expect(actual).toBeDefined();
       expectTypeOf(actual).toEqualTypeOf<Optional<number>>();
       expect(actual.isPresent()).toBeFalsy();
+    });
+
+    it('reduce returns the result of reducing the map with the callback', () => {
+      const numbers = createArrayItems<number, number>(10, (index) => [
+        index,
+        index * 2,
+      ]);
+
+      const expected = numbers.reduce(
+        (carry, [key, value]) => carry + key + value,
+        0,
+      );
+
+      const map = createMapFromArray(numbers);
+
+      const actual = map.reduce((carry, key, value) => carry + key + value, 0);
+
+      expect(actual).toBe(expected);
+    });
+
+    it('keys returns array of keys in the map', () => {
+      const numbers = createArrayItems<number, number>(10, (index) => [
+        index,
+        index * 2,
+      ]);
+
+      const map = createMapFromArray(numbers);
+
+      const actual = map.keys();
+
+      const expected = numbers.map(([key]) => key);
+
+      expect(actual).toEqual(expected);
+    });
+
+    it('values returns array of values in the map', () => {
+      const numbers = createArrayItems<number, number>(10, (index) => [
+        index,
+        index * 2,
+      ]);
+
+      const map = createMapFromArray(numbers);
+
+      const actual = map.values();
+
+      const expected = numbers.map(([, value]) => value);
+
+      expect(actual).toEqual(expected);
     });
 
     it('contains returns true if the key is in the map', () => {
