@@ -17,7 +17,7 @@ Instead of relying on native mutable arrays, sets, or maps, each structure is en
 
 ---
 
-## 📦 Install
+## ~~📦 Install~~
 
 ```bash
 pnpm add typescript-object-based-collections
