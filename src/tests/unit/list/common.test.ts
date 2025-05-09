@@ -130,7 +130,7 @@ describe('list/common', () => {
 
       const actual = list.get(2);
 
-      expect(actual.isPresent()).toBe(false);
+      expect(actual.isPresent()).toBeFalsy();
     });
 
     it('find returns optional containing value that matches the predicate', () => {
@@ -150,7 +150,43 @@ describe('list/common', () => {
 
       const actual = list.find((value) => value === 'not-found');
 
-      expect(actual.isPresent()).toBe(false);
+      expect(actual.isPresent()).toBeFalsy();
+    });
+
+    it('first returns optional containing the first value in the list', () => {
+      const items = ['hello', 'world'];
+
+      const list = ImmutableList(items);
+
+      const actual = list.first();
+
+      expect(actual.get()).toBe('hello');
+    });
+
+    it('first returns empty optional when the list is empty', () => {
+      const list = ImmutableList();
+
+      const actual = list.first();
+
+      expect(actual.isPresent()).toBeFalsy();
+    });
+
+    it('last returns optional containing the last value in the list', () => {
+      const items = ['hello', 'world'];
+
+      const list = ImmutableList(items);
+
+      const actual = list.last();
+
+      expect(actual.get()).toBe('world');
+    });
+
+    it('last returns empty optional when the list is empty', () => {
+      const list = ImmutableList();
+
+      const actual = list.last();
+
+      expect(actual.isPresent()).toBeFalsy();
     });
 
     it('map returns a new list containing the mapped values', () => {

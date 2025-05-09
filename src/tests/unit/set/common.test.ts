@@ -1,0 +1,253 @@
+import { describe, expect, expectTypeOf, it } from 'vitest';
+
+import { ImmutableList, ImmutableSet, createSetFromArray } from '../../..';
+
+describe('set/common', () => {
+  describe('ImmutableSet', () => {
+    it('should create an ImmutableSet-object', () => {
+      const set1 = ImmutableSet();
+      const set2 = expect(set1).toBeDefined();
+      expect(set2).toBeDefined();
+    });
+
+    it('should create an ImmutableSet-object with a hash function', () => {
+      const set1 = ImmutableSet<number>();
+      const set2 = createSetFromArray([1, 2, 3]);
+
+      expect(set1).toBeDefined();
+      expect(set2).toBeDefined();
+
+      expectTypeOf(set1).toEqualTypeOf<ImmutableSet<number>>();
+      expectTypeOf(set2).toEqualTypeOf<ImmutableSet<number>>();
+
+      expect(set1.toArray()).toEqual([]);
+      expect(set2.toArray()).toEqual([1, 2, 3]);
+    });
+
+    it('toArray returns an array of keys', () => {
+      const keys: number[] = Array.from({ length: 100 }, (_, index) => index);
+
+      const set1 = createSetFromArray(keys);
+      const set2 = ImmutableSet<number>();
+
+      const actual1 = set1.toArray();
+      const actual2 = set2.toArray();
+
+      expect(actual1).toEqual(expect.arrayContaining(keys));
+      expect(actual2).toEqual([]);
+    });
+
+    it('size returns the number of elements in the set', () => {
+      const keys: number[] = Array.from({ length: 100 }, (_, index) => index);
+
+      const set1 = createSetFromArray(keys);
+      const set2 = ImmutableSet<number>();
+
+      const actual1 = set1.size();
+      const actual2 = set2.size();
+
+      expect(actual1).toEqual(keys.length);
+      expect(actual2).toEqual(0);
+    });
+
+    it('isEmpty returns true if the set is empty', () => {
+      const keys: number[] = Array.from({ length: 100 }, (_, index) => index);
+
+      const set1 = createSetFromArray(keys);
+      const set2 = ImmutableSet<number>();
+
+      const actual1 = set1.isEmpty();
+      const actual2 = set2.isEmpty();
+
+      expect(actual1).toBeFalsy();
+      expect(actual2).toBeTruthy();
+    });
+
+    it('isNotEmpty returns true if the set is not empty', () => {
+      const keys: number[] = Array.from({ length: 100 }, (_, index) => index);
+
+      const set1 = createSetFromArray(keys);
+      const set2 = ImmutableSet<number>();
+
+      const actual1 = set1.isNotEmpty();
+      const actual2 = set2.isNotEmpty();
+
+      expect(actual1).toBeTruthy();
+      expect(actual2).toBeFalsy();
+    });
+
+    it('add returns a new ImmutableSet with the key added', () => {
+      const count = Math.floor(Math.random() * 100) + 1;
+
+      const keys: number[] = Array.from({ length: count }, (_, index) => index);
+
+      const set = createSetFromArray(keys);
+
+      const actual = set.add(count + 1);
+
+      expect(actual).toBeDefined();
+      expectTypeOf(actual).toEqualTypeOf<ImmutableSet<number>>();
+
+      [...keys, count + 1].forEach((key) => {
+        expect(actual.contains(key)).toBeTruthy();
+      });
+    });
+
+    it('addAll returns a new ImmutableSet with the keys added', () => {
+      const count = Math.floor(Math.random() * 100) + 1;
+
+      const keys: number[] = Array.from({ length: count }, (_, index) => index);
+
+      const set = createSetFromArray(keys);
+
+      const addedKeys = [count + 1, count + 2, count + 3];
+
+      const actual = set.addAll(...addedKeys);
+
+      expect(actual).toBeDefined();
+      expectTypeOf(actual).toEqualTypeOf<ImmutableSet<number>>();
+
+      [...keys, ...addedKeys].forEach((key) => {
+        expect(actual.contains(key)).toBeTruthy();
+      });
+    });
+
+    it('remove returns a new ImmutableSet with the key removed', () => {
+      const count = Math.floor(Math.random() * 100) + 1;
+
+      const keys: number[] = Array.from({ length: count }, (_, index) => index);
+
+      const target = keys[Math.floor(Math.random() * keys.length)];
+
+      const set = createSetFromArray(keys);
+
+      const actual = set.remove(target);
+
+      expect(actual).toBeDefined();
+      expectTypeOf(actual).toEqualTypeOf<ImmutableSet<number>>();
+
+      expect(actual.contains(target)).toBeFalsy();
+
+      ImmutableList(keys)
+        .filter((key) => key !== target)
+        .foreach((key) => {
+          expect(actual.contains(key)).toBeTruthy();
+        });
+    });
+
+    it('remove returns a new empty ImmutableSet if the set is empty', () => {
+      const set = ImmutableSet<number>();
+
+      const actual = set.remove(1);
+
+      expect(actual).toBeDefined();
+      expectTypeOf(actual).toEqualTypeOf<ImmutableSet<number>>();
+
+      expect(actual.isEmpty()).toBeTruthy();
+    });
+
+    it('contains returns true if the key is in the set', () => {
+      const count = Math.floor(Math.random() * 100) + 1;
+
+      const keys: number[] = Array.from({ length: count }, (_, index) => index);
+
+      const set = createSetFromArray(keys);
+
+      keys.forEach((key) => {
+        expect(set.contains(key)).toBeTruthy();
+      });
+    });
+
+    it('contains returns false if the key is not in the set', () => {
+      const count = Math.floor(Math.random() * 100) + 1;
+
+      const keys: number[] = Array.from({ length: count }, (_, index) => index);
+
+      const set = createSetFromArray(keys);
+
+      expect(set.contains(count + 1)).toBeFalsy();
+    });
+
+    it('map returns a new ImmutableSet with the keys mapped', () => {
+      const count = Math.floor(Math.random() * 100) + 1;
+
+      const keys: number[] = Array.from({ length: count }, (_, index) => index);
+      const mapper = (key: number): number => key * 2;
+
+      const expectedKeys = keys.map(mapper);
+
+      const set = createSetFromArray(keys);
+
+      const actual = set.map(mapper);
+
+      expect(actual).toBeDefined();
+      expectTypeOf(actual).toEqualTypeOf<ImmutableSet<number>>();
+      expect(actual.toArray()).toEqual(expect.arrayContaining(expectedKeys));
+    });
+
+    it('filter returns a new ImmutableSet with the keys filtered', () => {
+      const count = Math.floor(Math.random() * 100) + 1;
+
+      const keys: number[] = Array.from({ length: count }, (_, index) => index);
+      const predicate = (key: number): boolean => key % 2 === 0;
+
+      const expectedKeys = keys.filter(predicate);
+
+      const set = createSetFromArray(keys);
+
+      const actual = set.filter(predicate);
+
+      expect(actual).toBeDefined();
+      expectTypeOf(actual).toEqualTypeOf<ImmutableSet<number>>();
+      expect(actual.toArray()).toEqual(expect.arrayContaining(expectedKeys));
+    });
+
+    it('foreach calls the callback for each key in the set', () => {
+      const count = Math.floor(Math.random() * 100) + 1;
+
+      const keys: number[] = Array.from({ length: count }, (_, index) => index);
+
+      const set = createSetFromArray(keys);
+
+      const callback = (key: number): void => {
+        expectTypeOf(key).toEqualTypeOf<number>();
+      };
+
+      set.forEach(callback);
+    });
+
+    it('equals returns true if the sets are equal', () => {
+      const count = Math.floor(Math.random() * 100) + 1;
+
+      const keys: number[] = Array.from({ length: count }, (_, index) => index);
+
+      const set1 = createSetFromArray(keys);
+      const set2 = createSetFromArray(keys);
+
+      expect(set1.equals(set2)).toBeTruthy();
+    });
+
+    it('equals returns false if the sets are not equal', () => {
+      const count = Math.floor(Math.random() * 100) + 1;
+
+      const keys: number[] = Array.from({ length: count }, (_, index) => index);
+
+      const set1 = createSetFromArray(keys);
+      const set2 = createSetFromArray([...keys, count + 1]);
+
+      expect(set1.equals(set2)).toBeFalsy();
+    });
+
+    it('exists returns true if the predicate is satisfied by any key', () => {
+      const count = Math.floor(Math.random() * 100) + 1;
+
+      const keys: number[] = Array.from({ length: count }, (_, index) => index);
+
+      const set = createSetFromArray(keys);
+
+      const predicate = (key: number): boolean => key % 2 === 0;
+
+      expect(set.exists(predicate)).toBeTruthy();
+    });
+  });
+});
