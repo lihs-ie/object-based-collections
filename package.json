@@ -1,5 +1,5 @@
 {
-  "name": "typescript-object-based-collections",
+  "name": "object-based-collections",
   "version": "0.0.1",
   "description": "Object-based collections in TypeScript",
   "main": "dist/cjs/index.js",
@@ -8,12 +8,20 @@
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": {
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/esm/index.js"
+    }
+  },
   "scripts": {
     "build:cjs": "tsc --project tsconfig.cjs.json",
     "build:esm": "tsc --project tsconfig.esm.json",
+    "build": "pnpm run build:cjs && pnpm run build:esm",
     "test": "vitest",
     "testrun": "vitest run",
-    "prepare": "husky"
+    "prepare": "husky",
+    "prepublishOnly": "pnpm build"
   },
   "lint-staged": {
     "**/*.{ts,tsx,js,jsx}": [
@@ -26,7 +34,11 @@
   },
   "keywords": [],
   "author": "lihs.dev@gmail.com",
-  "license": "ISC",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lihs-ie/object-based-collections.git"
+  },
   "devDependencies": {
     "@eslint/js": "^9.26.0",
     "@types/node": "^22.15.3",
