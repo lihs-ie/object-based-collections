@@ -6,7 +6,7 @@ import {
   nullable,
   Optional,
   Some,
-} from '../../../collections/optional';
+} from '../../../collections/optional/common';
 
 const presentValues = {
   string: 'hello world',
@@ -197,28 +197,30 @@ describe('optional/common', () => {
     it('orElseThrow returns the value when present', () => {
       const expected = Math.floor(Math.random() * 100);
 
-      const errorSupplier = () => new Error('No value present');
-
       const optional = Optional(expected);
 
-      const actual = optional.orElseThrow(errorSupplier);
+      const actual = optional.orElseThrow(Error);
 
       expect(actual).toBe(expected);
     });
 
-    it('orElseThrow throws exception when not present', () => {
+    it('orElseThrow throws NoSuchElementException when not present', () => {
+      const optional = empty<number>();
+
+      expect(() => optional.orElseThrow()).toThrowError('No value present');
+    });
+
+    it('orElseThrow throws specified-exception when not present', () => {
       const error = class StdError extends Error {
-        constructor(message: string) {
-          super(message);
+        constructor() {
+          super('StdError');
           this.name = 'StdError';
         }
       };
 
-      const errorSupplier = () => new error('No value present');
-
       const optional = empty<number>();
 
-      expect(() => optional.orElseThrow(errorSupplier)).toThrowError(error);
+      expect(() => optional.orElseThrow(error)).toThrowError(error);
     });
 
     it('map returns Optional-object containing a mapped value when present', () => {
@@ -271,6 +273,12 @@ describe('optional/common', () => {
       const optional = nullable(null);
 
       expect(optional.isPresent()).toBeFalsy();
+    });
+
+    it('returns Optional-object when value is undefined', () => {
+      const optional = nullable(undefined);
+
+      expect(optional).toBeDefined();
     });
   });
 });

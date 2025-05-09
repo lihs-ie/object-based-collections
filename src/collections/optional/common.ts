@@ -1,3 +1,14 @@
+class NoSuchElementException extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'NoSuchElementException';
+  }
+}
+
+type ErrorConstructor<E extends Error, A extends unknown[]> = new (
+  ...args: A
+) => E;
+
 export interface Some<T> {
   isPresent: () => true;
   get: () => T;
@@ -27,21 +38,17 @@ export interface Optional<T> {
   ifPresentOrElse: <R>(ifPresent: (value: T) => R, ifNotPresent: () => R) => R;
   orElse: (alternative: T) => T;
   orElseGet: (supplier: () => T) => T;
-  orElseThrow: <E extends Error>(errorSupplier: () => E) => T;
+  orElseThrow: <E extends Error, A extends unknown[]>(
+    error?: ErrorConstructor<E, A>,
+    ...args: A
+  ) => T;
   map: <R>(mapper: (value: T) => R) => Optional<R>;
-}
-
-class NoSuchElementException extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'NoSuchElementException';
-  }
 }
 
 export const empty = <T>(): Optional<T> => Optional<T>(undefined);
 
-export const nullable = <T>(value: T | null): Optional<T> => {
-  if (value === null) {
+export const nullable = <T>(value?: T | null): Optional<T> => {
+  if (value === null || value === undefined) {
     return empty<T>();
   }
 
@@ -92,12 +99,17 @@ export const Optional = <T>(value?: T): Optional<T> => {
     return supplier();
   };
 
-  const orElseThrow = <E extends Error>(errorSupplier: () => E): T => {
+  const orElseThrow = <E extends Error, A extends unknown[]>(
+    error?: ErrorConstructor<E, A>,
+    ...args: A
+  ): T => {
     if (isPresent()) {
       return inner.get();
     }
 
-    throw errorSupplier();
+    throw error
+      ? new error(...args)
+      : new NoSuchElementException('No value present');
   };
 
   const map = <R>(mapper: (value: T) => R): Optional<R> => {

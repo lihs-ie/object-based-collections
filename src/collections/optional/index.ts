@@ -1,1 +1,7 @@
-export { Optional, Some, None, nullable, empty } from './common';
+export {
+  Optional,
+  Some,
+  None,
+  nullable as NullableOptional,
+  empty as EmptyOptional,
+} from './common';
