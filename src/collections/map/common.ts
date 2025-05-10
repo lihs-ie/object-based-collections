@@ -179,7 +179,7 @@ export const ImmutableMap =
     };
 
     const mapValues = <RV>(
-      mapper: (value: V, index) => RV,
+      mapper: (value: V, index: number) => RV,
     ): ImmutableMap<K, RV> => {
       const mapped = toArray().map(([key, value], index): [K, RV] => [
         key,
