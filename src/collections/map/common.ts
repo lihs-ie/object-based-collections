@@ -1,17 +1,30 @@
 import { HAMTNode, type Hasher, BitmapIndexedNode, LeafNode } from '../hamt';
+import { ImmutableList } from '../list';
 import { Optional } from '../optional/common';
+import { ImmutableSet, SetFromArray } from '../set';
+
+type ObjectKey = string | number | symbol;
 
 export interface ImmutableMap<K, V> {
+  toArray: () => [K, V][];
+  toObject: () => Record<string, V>;
+  toList: () => ImmutableList<V>;
+  toSet: () => ImmutableSet<K>;
   add: (key: K, value: V) => ImmutableMap<K, V>;
   remove: (key: K) => ImmutableMap<K, V>;
   get: (key: K) => Optional<V>;
+  find: (predicate: (key: K, value: V) => boolean) => Optional<V>;
+  reduce: <R>(
+    callback: (accumulator: R, key: K, value: V) => R,
+    initial: R,
+  ) => R;
+  keys: () => K[];
+  values: () => V[];
   contains: (key: K) => boolean;
   size: () => number;
   isEmpty: () => boolean;
   isNotEmpty: () => boolean;
-  toArray: () => [K, V][];
   foreach: (callback: (key: K, value: V) => void) => void;
-  find: (predicate: (key: K, value: V) => boolean) => Optional<V>;
   exists: (predicate: (key: K, value: V) => boolean) => boolean;
   equals: (
     comparison: ImmutableMap<K, V>,
@@ -23,10 +36,40 @@ export interface ImmutableMap<K, V> {
   filter: (predicate: (key: K, value: V) => boolean) => ImmutableMap<K, V>;
 }
 
+const isObjectKey = (key: unknown): key is ObjectKey => {
+  return (
+    typeof key === 'string' ||
+    typeof key === 'number' ||
+    typeof key === 'symbol'
+  );
+};
+
 export const ImmutableMap =
   (hasher: Hasher) =>
   <K, V>(root: HAMTNode<K, V> | null = null): ImmutableMap<K, V> => {
     const toArray = (): [K, V][] => root?.toArray() || [];
+
+    const toObject = (): Record<string, V> => {
+      return reduce(
+        (carry, key, value) => {
+          if (isObjectKey(key)) {
+            carry[key.toString()] = value;
+          } else {
+            carry[JSON.stringify(key)] = value;
+          }
+          return carry;
+        },
+        {} as Record<string, V>,
+      );
+    };
+
+    const toList = (): ImmutableList<V> => {
+      return ImmutableList(values());
+    };
+
+    const toSet = (): ImmutableSet<K> => {
+      return SetFromArray(hasher)(keys());
+    };
 
     const size = (): number => toArray().length;
 
@@ -53,6 +96,23 @@ export const ImmutableMap =
       return Optional<V>(root?.get(hash, 0));
     };
 
+    const reduce = <R>(
+      callback: (accumulator: R, key: K, value: V) => R,
+      initial: R,
+    ): R => {
+      return toArray().reduce<R>((carry, [key, value]): R => {
+        return callback(carry, key, value);
+      }, initial);
+    };
+
+    const keys = (): K[] => toArray().map(([key]) => key);
+
+    const values = (): V[] => toArray().map(([, value]) => value);
+
+    const find = (predicate: (key: K, value: V) => boolean): Optional<V> => {
+      return Optional(root?.find(predicate)?.value());
+    };
+
     const contains = (key: K): boolean => {
       const hash = hasher.hash(key);
 
@@ -63,10 +123,6 @@ export const ImmutableMap =
       const items = toArray();
 
       items.forEach(([key, value]): void => callback(key, value));
-    };
-
-    const find = (predicate: (key: K, value: V) => boolean): Optional<V> => {
-      return Optional(root?.find(predicate)?.value());
     };
 
     const exists = (predicate: (key: K, value: V) => boolean): boolean => {
@@ -134,16 +190,22 @@ export const ImmutableMap =
     };
 
     return {
+      toArray,
+      toObject,
+      toList,
+      toSet,
       add,
       remove,
       get,
+      find,
+      reduce,
+      keys,
+      values,
       contains,
       size,
       isEmpty,
       isNotEmpty,
-      toArray,
       foreach,
-      find,
       exists,
       equals,
       map,
@@ -164,8 +226,6 @@ export const fromArray =
 
     return ImmutableMap(hasher)(root);
   };
-
-type ObjectKey = string | number | symbol;
 
 export const fromObject =
   (hasher: Hasher) =>

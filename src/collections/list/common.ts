@@ -115,6 +115,10 @@ export const ImmutableList = <T>(values: T[] = []): ImmutableList<T> => {
   };
 
   const drop = (count: number): ImmutableList<T> => {
+    if (count <= 0) {
+      return ImmutableList(items);
+    }
+
     const dropped = items.slice(count);
 
     return ImmutableList(dropped);
