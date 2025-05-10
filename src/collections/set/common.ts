@@ -15,10 +15,13 @@ export interface ImmutableSet<K> {
   remove: (key: K) => ImmutableSet<K>;
   contains: (key: K) => boolean;
   find: (predicate: (key: K) => boolean) => Optional<K>;
-  reduce: <R>(callback: (accumulator: R, key: K) => R, initial: R) => R;
-  map: <R>(mapper: (key: K) => R) => ImmutableSet<R>;
+  reduce: <R>(
+    callback: (accumulator: R, key: K, index: number) => R,
+    initial: R,
+  ) => R;
+  map: <R>(mapper: (key: K, index: number) => R) => ImmutableSet<R>;
   filter: (predicate: (key: K) => boolean) => ImmutableSet<K>;
-  forEach: (callback: (key: K) => void) => void;
+  forEach: (callback: (key: K, index: number) => void) => void;
   equals: (other: ImmutableSet<K>) => boolean;
   exists: (predicate: (key: K) => boolean) => boolean;
 }
@@ -90,16 +93,17 @@ export const ImmutableSet =
     };
 
     const reduce = <R>(
-      callback: (accumulator: R, key: K) => R,
+      callback: (accumulator: R, key: K, index: number) => R,
       initial: R,
     ): R => {
-      return toArray().reduce<R>((carry, key): R => {
-        return callback(carry, key);
+      return toArray().reduce<R>((carry, key, index): R => {
+        return callback(carry, key, index);
       }, initial);
     };
 
-    const map = <R>(mapper: (key: K) => R): ImmutableSet<R> => {
-      const mapped = root?.toArray().map(([key]) => mapper(key)) || [];
+    const map = <R>(mapper: (key: K, index: number) => R): ImmutableSet<R> => {
+      const mapped =
+        root?.toArray().map(([key], index) => mapper(key, index)) || [];
 
       return fromArray(hasher)(mapped);
     };
@@ -110,10 +114,10 @@ export const ImmutableSet =
       return fromArray(hasher)(filtered);
     };
 
-    const forEach = (callback: (key: K) => void): void => {
+    const forEach = (callback: (key: K, index: number) => void): void => {
       const items = toArray();
 
-      items.forEach((key): void => callback(key));
+      items.forEach((key, index): void => callback(key, index));
     };
 
     const equals = (comparison: ImmutableSet<K>): boolean => {

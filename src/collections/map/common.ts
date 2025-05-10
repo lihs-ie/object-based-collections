@@ -15,7 +15,7 @@ export interface ImmutableMap<K, V> {
   get: (key: K) => Optional<V>;
   find: (predicate: (key: K, value: V) => boolean) => Optional<V>;
   reduce: <R>(
-    callback: (accumulator: R, key: K, value: V) => R,
+    callback: (accumulator: R, key: K, value: V, index: number) => R,
     initial: R,
   ) => R;
   keys: () => K[];
@@ -24,15 +24,19 @@ export interface ImmutableMap<K, V> {
   size: () => number;
   isEmpty: () => boolean;
   isNotEmpty: () => boolean;
-  foreach: (callback: (key: K, value: V) => void) => void;
+  foreach: (callback: (key: K, value: V, index: number) => void) => void;
   exists: (predicate: (key: K, value: V) => boolean) => boolean;
   equals: (
     comparison: ImmutableMap<K, V>,
     callback?: (left: V, right: V) => boolean,
   ) => boolean;
-  map: <RK, RV>(mapper: (key: K, value: V) => [RK, RV]) => ImmutableMap<RK, RV>;
-  mapKeys: <RK>(mapper: (key: K) => RK) => ImmutableMap<RK, V>;
-  mapValues: <RV>(mapper: (value: V) => RV) => ImmutableMap<K, RV>;
+  map: <RK, RV>(
+    mapper: (key: K, value: V, index: number) => [RK, RV],
+  ) => ImmutableMap<RK, RV>;
+  mapKeys: <RK>(mapper: (key: K, index: number) => RK) => ImmutableMap<RK, V>;
+  mapValues: <RV>(
+    mapper: (value: V, index: number) => RV,
+  ) => ImmutableMap<K, RV>;
   filter: (predicate: (key: K, value: V) => boolean) => ImmutableMap<K, V>;
 }
 
@@ -97,11 +101,11 @@ export const ImmutableMap =
     };
 
     const reduce = <R>(
-      callback: (accumulator: R, key: K, value: V) => R,
+      callback: (accumulator: R, key: K, value: V, index: number) => R,
       initial: R,
     ): R => {
-      return toArray().reduce<R>((carry, [key, value]): R => {
-        return callback(carry, key, value);
+      return toArray().reduce<R>((carry, [key, value], index): R => {
+        return callback(carry, key, value, index);
       }, initial);
     };
 
@@ -119,10 +123,12 @@ export const ImmutableMap =
       return root?.contains(hash, 0) || false;
     };
 
-    const foreach = (callback: (key: K, value: V) => void): void => {
+    const foreach = (
+      callback: (key: K, value: V, index: number) => void,
+    ): void => {
       const items = toArray();
 
-      items.forEach(([key, value]): void => callback(key, value));
+      items.forEach(([key, value], index): void => callback(key, value, index));
     };
 
     const exists = (predicate: (key: K, value: V) => boolean): boolean => {
@@ -152,28 +158,32 @@ export const ImmutableMap =
     };
 
     const map = <RK, RV>(
-      mapper: (key: K, value: V) => [RK, RV],
+      mapper: (key: K, value: V, index: number) => [RK, RV],
     ): ImmutableMap<RK, RV> => {
-      const mapped = toArray().map(([key, value]): [RK, RV] =>
-        mapper(key, value),
+      const mapped = toArray().map(([key, value], index): [RK, RV] =>
+        mapper(key, value, index),
       );
 
       return fromArray(hasher)(mapped);
     };
 
-    const mapKeys = <RK>(mapper: (key: K) => RK): ImmutableMap<RK, V> => {
-      const mapped = toArray().map(([key, value]): [RK, V] => [
-        mapper(key),
+    const mapKeys = <RK>(
+      mapper: (key: K, index: number) => RK,
+    ): ImmutableMap<RK, V> => {
+      const mapped = toArray().map(([key, value], index): [RK, V] => [
+        mapper(key, index),
         value,
       ]);
 
       return fromArray(hasher)(mapped);
     };
 
-    const mapValues = <RV>(mapper: (value: V) => RV): ImmutableMap<K, RV> => {
-      const mapped = toArray().map(([key, value]): [K, RV] => [
+    const mapValues = <RV>(
+      mapper: (value: V, index: number) => RV,
+    ): ImmutableMap<K, RV> => {
+      const mapped = toArray().map(([key, value], index): [K, RV] => [
         key,
-        mapper(value),
+        mapper(value, index),
       ]);
 
       return fromArray(hasher)(mapped);
