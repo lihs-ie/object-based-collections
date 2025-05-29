@@ -21,4 +21,5 @@ export {
   NullableOptional,
   EmptyOptional,
   ImmutableList,
+  Queue,
 } from './collections';
