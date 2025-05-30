@@ -1,6 +1,7 @@
 /**
  * Immutable Queue implementation based on Java's Queue interface
  * Provides FIFO (First-In-First-Out) operations with functional programming principles
+ * Optimized for time and space complexity using two-stack approach
  */
 
 import { Optional } from '../optional/common';
@@ -11,6 +12,34 @@ class NoSuchElementException extends Error {
     this.name = 'NoSuchElementException';
   }
 }
+
+/**
+ * Internal queue structure using two stacks for efficient operations
+ * Front stack for dequeue operations, rear stack for enqueue operations
+ */
+interface QueueData<T> {
+  readonly front: T[];
+  readonly rear: T[];
+  readonly size: number;
+}
+
+const createQueueData = <T>(front: T[] = [], rear: T[] = []): QueueData<T> => ({
+  front,
+  rear,
+  size: front.length + rear.length,
+});
+
+/**
+ * Transfers elements from rear to front when front is empty
+ * This amortizes the cost of dequeue operations
+ */
+const normalize = <T>(data: QueueData<T>): QueueData<T> => {
+  if (data.front.length > 0 || data.rear.length === 0) {
+    return data;
+  }
+
+  return createQueueData([...data.rear].reverse(), []);
+};
 
 export interface Queue<T> {
   size: () => number;
@@ -24,6 +53,7 @@ export interface Queue<T> {
   remove: () => Queue<T>;
   poll: () => { queue: Queue<T>; element: Optional<T> };
   element: () => T;
+  elementOption: () => Optional<T>;
   peek: () => Optional<T>;
 
   // Additional utility methods
@@ -36,74 +66,146 @@ export interface Queue<T> {
   filter: (predicate: (element: T) => boolean) => Queue<T>;
 }
 
-export const Queue = <T>(elements: T[] = []): Queue<T> => {
-  const items = [...elements];
+/**
+ * Internal Queue implementation using two-stack approach for amortized O(1) operations
+ */
+const createQueueFromData = <T>(data: QueueData<T>): Queue<T> => {
+  const queueSize = data.size;
 
-  const size = (): number => items.length;
+  const size = (): number => queueSize;
 
-  const isEmpty = (): boolean => items.length === 0;
+  const isEmpty = (): boolean => queueSize === 0;
 
-  const isNotEmpty = (): boolean => !isEmpty();
+  const isNotEmpty = (): boolean => queueSize > 0;
 
-  const toArray = (): T[] => [...items];
+  // O(n) operation - only when needed
+  const toArray = (): T[] => {
+    const result: T[] = new Array(queueSize);
+    let index = 0;
 
-  // Adds an element to the rear of the queue
-  // Equivalent to Java's add() method
-  const add = (element: T): Queue<T> => Queue([...items, element]);
-
-  // Adds an element to the rear of the queue
-  // Equivalent to Java's offer() method (same as add for unbounded queue)
-  const offer = (element: T): Queue<T> => add(element);
-
-  // Removes and returns the head of the queue
-  // Throws exception if queue is empty (equivalent to Java's remove())
-  const remove = (): Queue<T> => {
-    if (isEmpty()) {
-      throw new NoSuchElementException('Queue is empty');
+    // Add front elements in order
+    for (const element of data.front) {
+      result[index++] = element;
     }
-    return Queue(items.slice(1));
+
+    // Add rear elements in order (they are already in correct order)
+    for (const element of data.rear) {
+      result[index++] = element;
+    }
+
+    return result;
   };
 
-  // Removes and returns the head of the queue
-  // Returns Optional.empty() if queue is empty (equivalent to Java's poll())
-  const poll = (): { queue: Queue<T>; element: Optional<T> } => {
-    if (isEmpty()) {
-      return { queue: Queue(items), element: Optional<T>() };
+  // O(1) operation - amortized
+  const add = (element: T): Queue<T> => {
+    const newData = createQueueData(data.front, [...data.rear, element]);
+    return createQueueFromData(newData);
+  };
+
+  // O(1) operation - same as add for unbounded queue
+  const offer = (element: T): Queue<T> => add(element);
+
+  // O(1) amortized operation
+  const remove = (): Queue<T> => {
+    const normalizedData = normalize(data);
+
+    if (normalizedData.front.length === 0) {
+      throw new NoSuchElementException('Queue is empty');
     }
+
+    const newFront = normalizedData.front.slice(1);
+    const newData = createQueueData(newFront, normalizedData.rear);
+    return createQueueFromData(newData);
+  };
+
+  // O(1) amortized operation
+  const poll = (): { queue: Queue<T>; element: Optional<T> } => {
+    const normalizedData = normalize(data);
+
+    if (normalizedData.front.length === 0) {
+      return {
+        queue: createQueueFromData(data),
+        element: Optional<T>(),
+      };
+    }
+
+    const element = normalizedData.front[0];
+    const newFront = normalizedData.front.slice(1);
+    const newData = createQueueData(newFront, normalizedData.rear);
+
     return {
-      queue: Queue(items.slice(1)),
-      element: Optional(items[0]),
+      queue: createQueueFromData(newData),
+      element: Optional(element),
     };
   };
 
-  // Returns the head of the queue without removing it
-  // Throws exception if queue is empty (equivalent to Java's element())
+  // O(1) amortized operation
   const element = (): T => {
-    if (isEmpty()) {
+    const normalizedData = normalize(data);
+
+    if (normalizedData.front.length === 0) {
       throw new NoSuchElementException('Queue is empty');
     }
-    return items[0];
+
+    return normalizedData.front[0];
   };
 
-  // Returns the head of the queue without removing it
-  // Returns Optional.empty() if queue is empty (equivalent to Java's peek())
-  const peek = (): Optional<T> => {
-    if (isEmpty()) {
+  // O(1) amortized operation
+  const elementOption = (): Optional<T> => {
+    const normalizedData = normalize(data);
+
+    if (normalizedData.front.length === 0) {
       return Optional<T>();
     }
-    return Optional(items[0]);
+
+    return Optional(normalizedData.front[0]);
   };
 
-  // Adds multiple elements to the queue
-  const addAll = (...elements: T[]): Queue<T> => Queue([...items, ...elements]);
+  // O(1) amortized operation
+  const peek = (): Optional<T> => {
+    const normalizedData = normalize(data);
 
-  // Returns an empty queue
-  const clear = (): Queue<T> => Queue<T>();
+    if (normalizedData.front.length === 0) {
+      return Optional<T>();
+    }
 
-  // Checks if the queue contains the specified element
-  const contains = (element: T): boolean => items.includes(element);
+    return Optional(normalizedData.front[0]);
+  };
 
-  // Checks equality with another queue
+  // O(k) where k is number of elements to add
+  const addAll = (...elements: T[]): Queue<T> => {
+    if (elements.length === 0) {
+      return createQueueFromData(data);
+    }
+
+    // Add elements directly to rear to maintain FIFO order
+    const newData = createQueueData(data.front, [...data.rear, ...elements]);
+    return createQueueFromData(newData);
+  };
+
+  // O(1) operation
+  const clear = (): Queue<T> => createQueueFromData(createQueueData());
+
+  // O(n) operation
+  const contains = (element: T): boolean => {
+    // Check front stack
+    for (const item of data.front) {
+      if (item === element) {
+        return true;
+      }
+    }
+
+    // Check rear stack
+    for (const item of data.rear) {
+      if (item === element) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  // O(n) operation
   const equals = (
     other: Queue<T>,
     compareFn: (a: T, b: T) => boolean = (a, b) => a === b,
@@ -112,25 +214,51 @@ export const Queue = <T>(elements: T[] = []): Queue<T> => {
       return false;
     }
 
+    if (isEmpty()) {
+      return other.isEmpty();
+    }
+
+    const thisArray = toArray();
     const otherArray = other.toArray();
-    return items.every((item, index) => compareFn(item, otherArray[index]));
+
+    for (let i = 0; i < thisArray.length; i++) {
+      if (!compareFn(thisArray[i], otherArray[i])) {
+        return false;
+      }
+    }
+
+    return true;
   };
 
-  // Executes a function for each element in the queue
+  // O(n) operation
   const foreach = (callback: (element: T) => void): void => {
-    items.forEach(callback);
+    // Process front elements in order
+    for (const element of data.front) {
+      callback(element);
+    }
+
+    // Process rear elements in order
+    for (const element of data.rear) {
+      callback(element);
+    }
   };
 
-  // Maps each element to a new value
+  // O(n) operation
   const map = <R>(mapper: (element: T) => R): Queue<R> => {
-    const mapped = items.map(mapper);
-    return Queue(mapped);
+    const mappedFront = data.front.map(mapper);
+    const mappedRear = data.rear.map(mapper);
+
+    const newData = createQueueData(mappedFront, mappedRear);
+    return createQueueFromData(newData);
   };
 
-  // Filters elements based on a predicate
+  // O(n) operation
   const filter = (predicate: (element: T) => boolean): Queue<T> => {
-    const filtered = items.filter(predicate);
-    return Queue(filtered);
+    const filteredFront = data.front.filter(predicate);
+    const filteredRear = data.rear.filter(predicate);
+
+    const newData = createQueueData(filteredFront, filteredRear);
+    return createQueueFromData(newData);
   };
 
   return {
@@ -143,6 +271,7 @@ export const Queue = <T>(elements: T[] = []): Queue<T> => {
     remove,
     poll,
     element,
+    elementOption,
     peek,
     addAll,
     clear,
@@ -152,4 +281,18 @@ export const Queue = <T>(elements: T[] = []): Queue<T> => {
     map,
     filter,
   };
+};
+
+/**
+ * Creates a new Queue from an array of elements
+ * O(n) time complexity for initial creation
+ */
+export const Queue = <T>(elements: T[] = []): Queue<T> => {
+  if (elements.length === 0) {
+    return createQueueFromData(createQueueData<T>());
+  }
+
+  // Initialize with all elements in front for correct order
+  const data = createQueueData(elements, []);
+  return createQueueFromData(data);
 };

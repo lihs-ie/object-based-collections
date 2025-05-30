@@ -166,6 +166,22 @@ describe('queue/common', () => {
       expect(queue.size()).toBe(3); // Queue should remain unchanged
     });
 
+    it('elementOption returns empty optional when queue is empty', () => {
+      const queue = Queue<string>();
+      const result = queue.elementOption();
+
+      expect(result.isPresent()).toBe(false);
+    });
+
+    it('elementOption returns head element without removing it', () => {
+      const queue = Queue(['first', 'second', 'third']);
+      const result = queue.elementOption();
+
+      expect(result.isPresent()).toBe(true);
+      expect(result.get()).toBe('first');
+      expect(queue.size()).toBe(3); // Queue should remain unchanged
+    });
+
     it('peek returns empty optional when queue is empty', () => {
       const queue = Queue<string>();
       const result = queue.peek();
