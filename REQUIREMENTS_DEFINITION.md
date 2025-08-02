@@ -1,62 +1,61 @@
-# 要件定義: ImmutableMapにkeySeqメソッドを追加
+# 要件定義: ImmutableListのループ系メソッドにindex引数を追加
 
 ## 目的
 
-immutable-jsのMapの実装を参考にして、ImmutableMapに`keySeq`メソッドを追加する。
+ImmutableListのループ系メソッド（map、filter、find、exists、forall、foreach等）にindex引数を追加し、JavaScript標準の配列メソッドと同等の機能を提供する。
 
 ## 機能要件
 
-### keySeqメソッドの仕様
+### 対象メソッドとシグネチャ
 
-- **メソッド名**: `keySeq()`
-- **戻り値**: マップ内の全てのキーを含む`IndexedSequence<K>`
-- **動作**: マップに格納されているキーを順序付きで取得でき、Sequenceの操作（map, filter, etc.）が利用可能
-- **型安全性**: TypeScriptの型推論でキーの型が正しく推論される
+#### 変更対象メソッド
 
-### 参考実装
+- `map: <R>(mapper: (value: T, index: number) => R) => ImmutableList<R>`
+- `filter: (predicate: (value: T, index: number) => boolean) => ImmutableList<T>`
+- `find: (predicate: (value: T, index: number) => boolean) => Optional<T>`
+- `exists: (predicate: (value: T, index: number) => boolean) => boolean`
+- `forall: (predicate: (value: T, index: number) => boolean) => boolean`
+- `foreach: (callback: (value: T, index: number) => void) => void`
 
-- immutable-jsのMap.keySeq()メソッドの動作を参考にする
-- 既存のImmutableMapのAPIデザインパターンに合わせる
+#### 動作仕様
+
+- 各メソッドでコールバック関数にvalue（値）とindex（インデックス）を渡す
+- indexは0から始まる連続した整数
+- 既存の動作を維持しつつ、indexが利用可能になる
+
+### 型安全性要件
+
+- TypeScriptの型推論が正しく動作すること
+- 既存のAPIとの互換性を保つこと
+- ジェネリクス型パラメータが正しく推論されること
 
 ## 技術要件
 
-### Sequence実装
+### インターフェース更新
 
-- `IndexedSequence<T>`インターフェースとファクトリ関数を作成
-- map, filter, first, last, forEach, find, includes, reverse, slice, take, skip等のメソッドを提供
-- immutableパターンを維持
-
-### インターフェース追加
-
-- `ImmutableMap<K, V>`インターフェースに`keySeq(): IndexedSequence<K>`メソッドを追加
+- `ImmutableList<T>`インターフェースの該当メソッドシグネチャを更新
 - 既存のメソッドとの一貫性を保つ
 
 ### 実装要件
 
-- immutableパターンを維持（元のマップを変更しない）
-- HAMT（Hash Array Mapped Trie）構造からキーを効率的に抽出
+- immutableパターンを維持（元のリストを変更しない）
+- 効率的なループ処理
 - メモリ効率の良い実装
 
 ### テスト要件
 
-- 空のマップでの動作テスト
-- 複数のキーを持つマップでの動作テスト
-- キーの型が正しく保持されることのテスト
-- IndexedSequenceのメソッド（map, filter等）が正しく動作することのテスト
-- 既存のテストが全て通ることの確認
+- 各メソッドでindex引数が正しく渡されることのテスト
+- index値が正しい順序（0, 1, 2, ...）であることのテスト
+- 空のリストでの動作テスト
+- 既存の機能が壊れていないことの確認テスト
+- 型安全性の確認テスト
 
 ## 完了条件
 
-1. `IndexedSequence<T>`が実装されている
-2. `keySeq()`メソッドがImmutableMapインターフェースに追加されている
-3. 実装が正しく動作し、全てのテストがパスする
+1. 全ての対象メソッドのシグネチャが更新されている
+2. 実装が正しく動作し、index引数が適切に渡される
+3. 全てのテストがパスする
 4. TypeScriptの型推論が正しく動作する
 5. コードスタイル規約に準拠している
 6. ビルドが成功する
-
-## ✅ 達成済み
-
-- IndexedSequence実装完了
-- keySeqメソッド追加完了
-- テスト実装完了
-- 全テストパス確認完了
+7. 既存の機能が壊れていない

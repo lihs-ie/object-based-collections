@@ -10,25 +10,25 @@ export interface ImmutableList<T> {
   addLastAll: (...values: T[]) => ImmutableList<T>;
   remove: (value: T) => ImmutableList<T>;
   get: (index: number) => Optional<T>;
-  find: (predicate: (value: T) => boolean) => Optional<T>;
+  find: (predicate: (value: T, index: number) => boolean) => Optional<T>;
   first: () => Optional<T>;
   last: () => Optional<T>;
-  map: <R>(mapper: (value: T) => R) => ImmutableList<R>;
-  filter: (predicate: (value: T) => boolean) => ImmutableList<T>;
+  map: <R>(mapper: (value: T, index: number) => R) => ImmutableList<R>;
+  filter: (predicate: (value: T, index: number) => boolean) => ImmutableList<T>;
   reduce: <R>(callback: (accumulator: R, value: T) => R, initial: R) => R;
   zip: <V>(other: ImmutableList<V>) => ImmutableList<[T, V]>;
   reverse: () => ImmutableList<T>;
   sort: (comparer?: (left: T, right: T) => number) => ImmutableList<T>;
   drop: (count: number) => ImmutableList<T>;
-  foreach: (callback: (value: T) => void) => void;
+  foreach: (callback: (value: T, index: number) => void) => void;
   isEmpty: () => boolean;
   isNotEmpty: () => boolean;
   equals: (
     comparison: ImmutableList<T>,
     callback?: (left: T, right: T) => boolean,
   ) => boolean;
-  exists: (predicate: (value: T) => boolean) => boolean;
-  forall: (predicate: (value: T) => boolean) => boolean;
+  exists: (predicate: (value: T, index: number) => boolean) => boolean;
+  forall: (predicate: (value: T, index: number) => boolean) => boolean;
 }
 
 export const ImmutableList = <T>(values: T[] = []): ImmutableList<T> => {
@@ -62,7 +62,9 @@ export const ImmutableList = <T>(values: T[] = []): ImmutableList<T> => {
 
   const get = (index: number): Optional<T> => Optional(items[index]);
 
-  const find = (predicate: (value: T) => boolean): Optional<T> => {
+  const find = (
+    predicate: (value: T, index: number) => boolean,
+  ): Optional<T> => {
     const target = items.find(predicate);
 
     return Optional(target);
@@ -72,13 +74,15 @@ export const ImmutableList = <T>(values: T[] = []): ImmutableList<T> => {
 
   const last = (): Optional<T> => NullableOptional(items[items.length - 1]);
 
-  const map = <R>(mapper: (value: T) => R): ImmutableList<R> => {
+  const map = <R>(mapper: (value: T, index: number) => R): ImmutableList<R> => {
     const mapped = items.map(mapper);
 
     return ImmutableList(mapped);
   };
 
-  const filter = (predicate: (value: T) => boolean): ImmutableList<T> => {
+  const filter = (
+    predicate: (value: T, index: number) => boolean,
+  ): ImmutableList<T> => {
     const filtered = items.filter(predicate);
 
     return ImmutableList(filtered);
@@ -124,7 +128,7 @@ export const ImmutableList = <T>(values: T[] = []): ImmutableList<T> => {
     return ImmutableList(dropped);
   };
 
-  const foreach = (callback: (value: T) => void): void => {
+  const foreach = (callback: (value: T, index: number) => void): void => {
     items.forEach(callback);
   };
 
@@ -150,11 +154,11 @@ export const ImmutableList = <T>(values: T[] = []): ImmutableList<T> => {
       .isEmpty();
   };
 
-  const exists = (predicate: (value: T) => boolean): boolean => {
+  const exists = (predicate: (value: T, index: number) => boolean): boolean => {
     return items.some(predicate);
   };
 
-  const forall = (predicate: (value: T) => boolean): boolean => {
+  const forall = (predicate: (value: T, index: number) => boolean): boolean => {
     return items.every(predicate);
   };
 

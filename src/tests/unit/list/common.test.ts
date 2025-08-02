@@ -143,6 +143,21 @@ describe('list/common', () => {
       expect(actual.get()).toBe('world');
     });
 
+    it('find passes correct index to predicate function', () => {
+      const items = ['a', 'b', 'c'];
+      const receivedIndices: number[] = [];
+
+      const list = ImmutableList(items);
+
+      const actual = list.find((value, index) => {
+        receivedIndices.push(index);
+        return index === 1; // Find item at index 1
+      });
+
+      expect(receivedIndices).toEqual([0, 1]); // Should stop at index 1
+      expect(actual.get()).toBe('b');
+    });
+
     it('find returns empty optional when no value matches the predicate', () => {
       const items = ['hello', 'world'];
 
@@ -200,8 +215,25 @@ describe('list/common', () => {
 
       const actual = list.map(mapper);
 
-      expect(actual).not.toBe(list);
+      expect(actual).toBeDefined();
+      expectTypeOf(actual).toEqualTypeOf<ImmutableList<number>>();
+      expect(actual.size()).toBe(items.length);
       expect(actual.toArray()).toEqual(expected);
+    });
+
+    it('map passes correct index to mapper function', () => {
+      const items = ['a', 'b', 'c'];
+      const receivedIndices: number[] = [];
+
+      const list = ImmutableList(items);
+
+      const actual = list.map((value, index) => {
+        receivedIndices.push(index);
+        return `${value}-${index}`;
+      });
+
+      expect(receivedIndices).toEqual([0, 1, 2]);
+      expect(actual.toArray()).toEqual(['a-0', 'b-1', 'c-2']);
     });
 
     it('filter returns a new list containing the filtered values', () => {
@@ -217,6 +249,21 @@ describe('list/common', () => {
 
       expect(actual).not.toBe(list);
       expect(actual.toArray()).toEqual(expected);
+    });
+
+    it('filter passes correct index to predicate function', () => {
+      const items = ['a', 'b', 'c', 'd'];
+      const receivedIndices: number[] = [];
+
+      const list = ImmutableList(items);
+
+      const actual = list.filter((value, index) => {
+        receivedIndices.push(index);
+        return index % 2 === 0; // Filter even indices
+      });
+
+      expect(receivedIndices).toEqual([0, 1, 2, 3]);
+      expect(actual.toArray()).toEqual(['a', 'c']);
     });
 
     it('reduce returns the result of reducing the list with the callback', () => {
@@ -342,6 +389,22 @@ describe('list/common', () => {
       list.foreach(callback);
     });
 
+    it('foreach passes correct index to callback function', () => {
+      const items = ['a', 'b', 'c'];
+      const receivedIndices: number[] = [];
+      const receivedValues: string[] = [];
+
+      const list = ImmutableList(items);
+
+      list.foreach((value, index) => {
+        receivedIndices.push(index);
+        receivedValues.push(value);
+      });
+
+      expect(receivedIndices).toEqual([0, 1, 2]);
+      expect(receivedValues).toEqual(['a', 'b', 'c']);
+    });
+
     it('isEmpty returns true when the list is empty', () => {
       const list = ImmutableList();
 
@@ -454,6 +517,21 @@ describe('list/common', () => {
       expect(list.exists(predicate)).toBeTruthy();
     });
 
+    it('exists passes correct index to predicate function', () => {
+      const items = ['a', 'b', 'c'];
+      const receivedIndices: number[] = [];
+
+      const list = ImmutableList(items);
+
+      const result = list.exists((value, index) => {
+        receivedIndices.push(index);
+        return index === 1; // Check if index 1 exists
+      });
+
+      expect(receivedIndices).toEqual([0, 1]); // Should stop at index 1
+      expect(result).toBe(true);
+    });
+
     it('exists returns false when the predicate is not satisfied by any item', () => {
       const items = ['hello', 'world'];
 
@@ -472,6 +550,21 @@ describe('list/common', () => {
       const predicate = (value: string) => value.length > 0;
 
       expect(list.forall(predicate)).toBeTruthy();
+    });
+
+    it('forall passes correct index to predicate function', () => {
+      const items = ['a', 'b', 'c'];
+      const receivedIndices: number[] = [];
+
+      const list = ImmutableList(items);
+
+      const result = list.forall((value, index) => {
+        receivedIndices.push(index);
+        return index < 3; // All indices should be less than 3
+      });
+
+      expect(receivedIndices).toEqual([0, 1, 2]);
+      expect(result).toBe(true);
     });
 
     it('forall returns false when the predicate is not satisfied by at least one item', () => {
