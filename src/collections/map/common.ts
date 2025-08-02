@@ -1,6 +1,7 @@
 import { HAMTNode, type Hasher, BitmapIndexedNode, LeafNode } from '../hamt';
 import { ImmutableList } from '../list';
 import { Optional } from '../optional/common';
+import { IndexedSequence } from '../sequence';
 import { ImmutableSet, SetFromArray } from '../set';
 
 type ObjectKey = string | number | symbol;
@@ -19,6 +20,7 @@ export interface ImmutableMap<K, V> {
     initial: R,
   ) => R;
   keys: () => K[];
+  keySeq: () => IndexedSequence<K>;
   values: () => V[];
   contains: (key: K) => boolean;
   size: () => number;
@@ -106,6 +108,9 @@ export const ImmutableMap =
     };
 
     const keys = (): K[] => toArray().map(([key]) => key);
+
+    // Returns IndexedSequence of keys for immutable-js API compatibility
+    const keySeq = (): IndexedSequence<K> => IndexedSequence(keys());
 
     const values = (): V[] => toArray().map(([, value]) => value);
 
@@ -200,6 +205,7 @@ export const ImmutableMap =
       find,
       reduce,
       keys,
+      keySeq,
       values,
       contains,
       size,

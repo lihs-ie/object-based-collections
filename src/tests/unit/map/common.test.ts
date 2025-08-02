@@ -4,6 +4,7 @@ import {
   ImmutableList,
   ImmutableMap,
   ImmutableSet,
+  IndexedSequence,
   Optional,
   createMapFromArray,
   createMapFromObject,
@@ -755,6 +756,77 @@ describe('map/common', () => {
       expectedItems.forEach(([key, value]) => {
         expect(actual.contains(key)).toBeTruthy();
         expect(actual.get(key).get()).toEqual(value);
+      });
+    });
+
+    describe('keySeq', () => {
+      it('returns IndexedSequence of keys in the map', () => {
+        const numbers = createArrayItems<number, number>(10, (index) => [
+          index,
+          index * 2,
+        ]);
+
+        const map = createMapFromArray(numbers);
+
+        const actual = map.keySeq();
+
+        const expected = numbers.map(([key]) => key);
+
+        expectTypeOf(actual).toEqualTypeOf<IndexedSequence<number>>();
+        expect(actual.toArray()).toEqual(expected);
+        expect(actual.size()).toBe(numbers.length);
+      });
+
+      it('returns empty IndexedSequence for empty map', () => {
+        const map = ImmutableMap<string, number>();
+
+        const actual = map.keySeq();
+
+        expectTypeOf(actual).toEqualTypeOf<IndexedSequence<string>>();
+        expect(actual.toArray()).toEqual([]);
+        expect(actual.isEmpty()).toBe(true);
+      });
+
+      it('maintains type safety for different key types', () => {
+        const stringMap = createMapFromArray([
+          ['key1', 'value1'],
+          ['key2', 'value2'],
+        ]);
+        const numberMap = createMapFromArray([
+          [1, 'one'],
+          [2, 'two'],
+        ]);
+
+        const stringKeys = stringMap.keySeq();
+        const numberKeys = numberMap.keySeq();
+
+        expectTypeOf(stringKeys).toEqualTypeOf<IndexedSequence<string>>();
+        expectTypeOf(numberKeys).toEqualTypeOf<IndexedSequence<number>>();
+
+        expect(stringKeys.toArray()).toEqual(['key1', 'key2']);
+        expect(numberKeys.toArray()).toEqual([1, 2]);
+      });
+
+      it('supports IndexedSequence methods like map and filter', () => {
+        const numbers = createArrayItems<number, number>(5, (index) => [
+          index,
+          index * 2,
+        ]);
+
+        const map = createMapFromArray(numbers);
+        const keySeq = map.keySeq();
+
+        // Test map operation
+        const doubled = keySeq.map((key) => key * 2);
+        expect(doubled.toArray()).toEqual([0, 2, 4, 6, 8]);
+
+        // Test filter operation
+        const evenKeys = keySeq.filter((key) => key % 2 === 0);
+        expect(evenKeys.toArray()).toEqual([0, 2, 4]);
+
+        // Test first and last
+        expect(keySeq.first()).toBe(0);
+        expect(keySeq.last()).toBe(4);
       });
     });
   });
