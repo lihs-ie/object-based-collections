@@ -1,4 +1,10 @@
-import { type Hasher, HAMTNode, LeafNode, BitmapIndexedNode } from '../hamt';
+import {
+  type Hasher,
+  HAMTNode,
+  LeafNode,
+  BitmapIndexedNode,
+  Hasher as HasherFactory,
+} from '../hamt';
 import { ImmutableList } from '../list';
 import { ImmutableMap, MapFromArray } from '../map';
 import { NullableOptional, Optional } from '../optional';
@@ -26,7 +32,7 @@ export interface ImmutableSet<K> {
 type Void = undefined;
 const voidValue: Void = undefined;
 
-export const ImmutableSet =
+const ImmutableSetImpl =
   (hasher: Hasher) =>
   <K>(root: HAMTNode<K, Void> | null = null): ImmutableSet<K> => {
     const toArray = (): K[] => root?.toArray().map(([key]) => key) || [];
@@ -49,10 +55,10 @@ export const ImmutableSet =
       const hash = hasher.hash(key);
 
       if (root === null) {
-        return ImmutableSet(hasher)(LeafNode(hash, key, voidValue));
+        return ImmutableSetImpl(hasher)(LeafNode(hash, key, voidValue));
       }
 
-      return ImmutableSet(hasher)(root.add(hash, 0, key, voidValue));
+      return ImmutableSetImpl(hasher)(root.add(hash, 0, key, voidValue));
     };
 
     const addAll = (...keys: K[]): ImmutableSet<K> => {
@@ -62,17 +68,17 @@ export const ImmutableSet =
         root || BitmapIndexedNode<K, Void>(),
       );
 
-      return ImmutableSet(hasher)(nextRoot);
+      return ImmutableSetImpl(hasher)(nextRoot);
     };
 
     const remove = (key: K): ImmutableSet<K> => {
       const hash = hasher.hash(key);
 
       if (root === null) {
-        return ImmutableSet(hasher)(null);
+        return ImmutableSetImpl(hasher)(null);
       }
 
-      return ImmutableSet(hasher)(root.remove(hash, 0));
+      return ImmutableSetImpl(hasher)(root.remove(hash, 0));
     };
 
     const contains = (key: K): boolean => {
@@ -101,13 +107,13 @@ export const ImmutableSet =
     const map = <R>(mapper: (key: K) => R): ImmutableSet<R> => {
       const mapped = root?.toArray().map(([key]) => mapper(key)) || [];
 
-      return fromArray(hasher)(mapped);
+      return fromArrayImpl(hasher)(mapped);
     };
 
     const filter = (predicate: (key: K) => boolean): ImmutableSet<K> => {
       const filtered = toArray().filter(predicate);
 
-      return fromArray(hasher)(filtered);
+      return fromArrayImpl(hasher)(filtered);
     };
 
     const forEach = (callback: (key: K) => void): void => {
@@ -149,7 +155,7 @@ export const ImmutableSet =
     };
   };
 
-export const fromArray =
+const fromArrayImpl =
   (hasher: Hasher) =>
   <T>(keys: T[]): ImmutableSet<T> => {
     const root = keys.reduce<HAMTNode<T, Void>>(
@@ -158,5 +164,25 @@ export const fromArray =
       BitmapIndexedNode<T, Void>(),
     );
 
-    return ImmutableSet(hasher)(root);
+    return ImmutableSetImpl(hasher)(root);
   };
+
+export interface ImmutableSetConstructor {
+  (hasher: Hasher): <K>(root?: HAMTNode<K, Void> | null) => ImmutableSet<K>;
+  fromArray<T>(items: T[]): ImmutableSet<T>;
+  of<T>(...items: T[]): ImmutableSet<T>;
+  empty<T>(): ImmutableSet<T>;
+}
+
+export const ImmutableSet: ImmutableSetConstructor = Object.assign(
+  ImmutableSetImpl,
+  {
+    fromArray: <T>(items: T[]): ImmutableSet<T> =>
+      fromArrayImpl(HasherFactory())(items),
+    of: <T>(...items: T[]): ImmutableSet<T> =>
+      fromArrayImpl(HasherFactory())(items),
+    empty: <T>(): ImmutableSet<T> => ImmutableSetImpl(HasherFactory())<T>(),
+  },
+) as ImmutableSetConstructor;
+
+export const fromArray = fromArrayImpl;

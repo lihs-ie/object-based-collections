@@ -31,7 +31,7 @@ export interface ImmutableList<T> {
   forall: (predicate: (value: T, index: number) => boolean) => boolean;
 }
 
-export const ImmutableList = <T>(values: T[] = []): ImmutableList<T> => {
+const ImmutableListImpl = <T>(values: T[] = []): ImmutableList<T> => {
   const items = [...values];
 
   const size = () => items.length;
@@ -39,25 +39,28 @@ export const ImmutableList = <T>(values: T[] = []): ImmutableList<T> => {
   const toArray = () => [...items];
 
   const addFirst = (value: T): ImmutableList<T> =>
-    ImmutableList([value, ...items]);
+    ImmutableListImpl([value, ...items]);
 
   const addFirstAll = (...values: T[]): ImmutableList<T> =>
-    ImmutableList([...values, ...items]);
+    ImmutableListImpl([...values, ...items]);
 
   const addLast = (value: T): ImmutableList<T> =>
-    ImmutableList([...items, value]);
+    ImmutableListImpl([...items, value]);
 
   const addLastAll = (...values: T[]): ImmutableList<T> =>
-    ImmutableList([...items, ...values]);
+    ImmutableListImpl([...items, ...values]);
 
   const remove = (value: T): ImmutableList<T> => {
     const index = items.indexOf(value);
 
     if (index === -1) {
-      return ImmutableList(items);
+      return ImmutableListImpl(items);
     }
 
-    return ImmutableList([...items.slice(0, index), ...items.slice(index + 1)]);
+    return ImmutableListImpl([
+      ...items.slice(0, index),
+      ...items.slice(index + 1),
+    ]);
   };
 
   const get = (index: number): Optional<T> => Optional(items[index]);
@@ -77,7 +80,7 @@ export const ImmutableList = <T>(values: T[] = []): ImmutableList<T> => {
   const map = <R>(mapper: (value: T, index: number) => R): ImmutableList<R> => {
     const mapped = items.map(mapper);
 
-    return ImmutableList(mapped);
+    return ImmutableListImpl(mapped);
   };
 
   const filter = (
@@ -85,7 +88,7 @@ export const ImmutableList = <T>(values: T[] = []): ImmutableList<T> => {
   ): ImmutableList<T> => {
     const filtered = items.filter(predicate);
 
-    return ImmutableList(filtered);
+    return ImmutableListImpl(filtered);
   };
 
   const reduce = <R>(
@@ -103,29 +106,29 @@ export const ImmutableList = <T>(values: T[] = []): ImmutableList<T> => {
       other.get(index).get(),
     ]);
 
-    return ImmutableList(zipped);
+    return ImmutableListImpl(zipped);
   };
 
   const reverse = (): ImmutableList<T> => {
     const reversed = Array.from(items).reverse();
 
-    return ImmutableList(reversed);
+    return ImmutableListImpl(reversed);
   };
 
   const sort = (comparer?: (left: T, right: T) => number): ImmutableList<T> => {
     const sorted = Array.from(items).sort(comparer);
 
-    return ImmutableList(sorted);
+    return ImmutableListImpl(sorted);
   };
 
   const drop = (count: number): ImmutableList<T> => {
     if (count <= 0) {
-      return ImmutableList(items);
+      return ImmutableListImpl(items);
     }
 
     const dropped = items.slice(count);
 
-    return ImmutableList(dropped);
+    return ImmutableListImpl(dropped);
   };
 
   const foreach = (callback: (value: T, index: number) => void): void => {
@@ -189,3 +192,19 @@ export const ImmutableList = <T>(values: T[] = []): ImmutableList<T> => {
     forall,
   };
 };
+
+export interface ImmutableListConstructor {
+  <T>(values?: T[]): ImmutableList<T>;
+  fromArray<T>(values: T[]): ImmutableList<T>;
+  of<T>(...values: T[]): ImmutableList<T>;
+  empty<T>(): ImmutableList<T>;
+}
+
+export const ImmutableList: ImmutableListConstructor = Object.assign(
+  ImmutableListImpl,
+  {
+    fromArray: <T>(values: T[]): ImmutableList<T> => ImmutableListImpl(values),
+    of: <T>(...values: T[]): ImmutableList<T> => ImmutableListImpl(values),
+    empty: <T>(): ImmutableList<T> => ImmutableListImpl<T>(),
+  },
+) as ImmutableListConstructor;

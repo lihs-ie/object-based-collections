@@ -46,7 +46,7 @@ const isObjectKey = (key: unknown): key is ObjectKey => {
   );
 };
 
-export const ImmutableMap =
+const ImmutableMapImpl =
   (hasher: Hasher) =>
   <K, V>(root: HAMTNode<K, V> | null = null): ImmutableMap<K, V> => {
     const toArray = (): [K, V][] => root?.toArray() || [];
@@ -83,14 +83,14 @@ export const ImmutableMap =
       const hash = hasher.hash(key);
 
       if (root === null) {
-        return ImmutableMap(hasher)(LeafNode(hash, key, value));
+        return ImmutableMapImpl(hasher)(LeafNode(hash, key, value));
       }
 
-      return ImmutableMap(hasher)(root.add(hash, 0, key, value));
+      return ImmutableMapImpl(hasher)(root.add(hash, 0, key, value));
     };
 
     const remove = (key: K): ImmutableMap<K, V> =>
-      ImmutableMap(hasher)(root?.remove(hasher.hash(key), 0));
+      ImmutableMapImpl(hasher)(root?.remove(hasher.hash(key), 0));
 
     const get = (key: K): Optional<V> => {
       const hash = hasher.hash(key);
@@ -163,7 +163,7 @@ export const ImmutableMap =
         mapper(key, value),
       );
 
-      return fromArray(hasher)(mapped);
+      return fromArrayImpl(hasher)(mapped);
     };
 
     const mapKeys = <RK>(mapper: (key: K) => RK): ImmutableMap<RK, V> => {
@@ -172,7 +172,7 @@ export const ImmutableMap =
         value,
       ]);
 
-      return fromArray(hasher)(mapped);
+      return fromArrayImpl(hasher)(mapped);
     };
 
     const mapValues = <RV>(mapper: (value: V) => RV): ImmutableMap<K, RV> => {
@@ -181,7 +181,7 @@ export const ImmutableMap =
         mapper(value),
       ]);
 
-      return fromArray(hasher)(mapped);
+      return fromArrayImpl(hasher)(mapped);
     };
 
     const filter = (
@@ -191,7 +191,7 @@ export const ImmutableMap =
         predicate(key, value),
       );
 
-      return fromArray(hasher)(filtered);
+      return fromArrayImpl(hasher)(filtered);
     };
 
     return {
@@ -221,7 +221,7 @@ export const ImmutableMap =
     };
   };
 
-export const fromArray =
+const fromArrayImpl =
   (hasher: Hasher) =>
   <K, V>(items: [K, V][]): ImmutableMap<K, V> => {
     const root = items.reduce<HAMTNode<K, V>>((carry, [key, value]) => {
@@ -230,10 +230,10 @@ export const fromArray =
       return carry.add(hash, 0, key, value);
     }, BitmapIndexedNode<K, V>());
 
-    return ImmutableMap(hasher)(root);
+    return ImmutableMapImpl(hasher)(root);
   };
 
-export const fromObject =
+const fromObjectImpl =
   (hasher: Hasher) =>
   <K extends ObjectKey, V>(items: Record<K, V>): ImmutableMap<K, V> => {
     const root = Object.entries<V>(items).reduce<HAMTNode<K, V>>(
@@ -245,5 +245,29 @@ export const fromObject =
       BitmapIndexedNode<K, V>(),
     );
 
-    return ImmutableMap(hasher)(root);
+    return ImmutableMapImpl(hasher)(root);
   };
+
+export interface ImmutableMapConstructor {
+  (hasher: Hasher): <K, V>(root?: HAMTNode<K, V> | null) => ImmutableMap<K, V>;
+  fromArray(hasher: Hasher): <K, V>(items: [K, V][]) => ImmutableMap<K, V>;
+  fromObject(
+    hasher: Hasher,
+  ): <K extends ObjectKey, V>(items: Record<K, V>) => ImmutableMap<K, V>;
+  empty(hasher: Hasher): <K, V>() => ImmutableMap<K, V>;
+}
+
+export const ImmutableMap: ImmutableMapConstructor = Object.assign(
+  ImmutableMapImpl,
+  {
+    fromArray: fromArrayImpl,
+    fromObject: fromObjectImpl,
+    empty:
+      (hasher: Hasher) =>
+      <K, V>() =>
+        ImmutableMapImpl(hasher)<K, V>(),
+  },
+);
+
+export const fromArray = fromArrayImpl;
+export const fromObject = fromObjectImpl;

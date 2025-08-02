@@ -576,5 +576,54 @@ describe('list/common', () => {
 
       expect(list.forall(predicate)).toBeFalsy();
     });
+
+    describe('Factory Methods', () => {
+      describe('fromArray', () => {
+        it('creates ImmutableList from array', () => {
+          const items = [1, 2, 3, 4, 5];
+
+          const list = ImmutableList.fromArray(items);
+
+          expect(list).toBeDefined();
+          expect(list.size()).toBe(5);
+          expect(list.toArray()).toEqual(items);
+        });
+
+        it('creates empty list from empty array', () => {
+          const list = ImmutableList.fromArray([]);
+
+          expect(list.isEmpty()).toBe(true);
+          expect(list.size()).toBe(0);
+        });
+      });
+
+      describe('of', () => {
+        it('creates ImmutableList from variadic arguments', () => {
+          const list = ImmutableList.of(1, 2, 3, 4, 5);
+
+          expect(list).toBeDefined();
+          expect(list.size()).toBe(5);
+          expect(list.toArray()).toEqual([1, 2, 3, 4, 5]);
+        });
+
+        it('creates empty list with no arguments', () => {
+          const list = ImmutableList.of();
+
+          expect(list.isEmpty()).toBe(true);
+          expect(list.size()).toBe(0);
+        });
+      });
+
+      describe('empty', () => {
+        it('creates empty ImmutableList', () => {
+          const list = ImmutableList.empty<string>();
+
+          expect(list).toBeDefined();
+          expect(list.isEmpty()).toBe(true);
+          expect(list.size()).toBe(0);
+          expect(list.toArray()).toEqual([]);
+        });
+      });
+    });
   });
 });

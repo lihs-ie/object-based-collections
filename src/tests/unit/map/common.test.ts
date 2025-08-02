@@ -6,9 +6,8 @@ import {
   ImmutableSet,
   IndexedSequence,
   Optional,
-  createMapFromArray,
-  createMapFromObject,
 } from '../../..';
+import { Hasher } from '../../../collections/hamt';
 
 const createArrayItems = <K, V>(
   count = 10,
@@ -92,9 +91,11 @@ const objectItems: Record<string, Record<ObjectKey, unknown>> = {
 };
 
 describe('map/common', () => {
+  const hasher = Hasher();
+
   describe('ImmutableMap', () => {
     it('constructor function returns ImmutableMap-object', () => {
-      const map = ImmutableMap();
+      const map = ImmutableMap(hasher)();
 
       expect(map).toBeDefined();
     });
@@ -102,7 +103,7 @@ describe('map/common', () => {
     it.each(Object.entries(arrayItems))(
       'fromArray returns ImmutableMap-object',
       (_, items) => {
-        const map = createMapFromArray(items);
+        const map = ImmutableMap.fromArray(hasher)(items);
 
         expect(map).toBeDefined();
         expectTypeOf(map).toEqualTypeOf<ImmutableMap<unknown, unknown>>();
@@ -114,7 +115,7 @@ describe('map/common', () => {
     it.each(Object.entries(objectItems))(
       'fromObject returns ImmutableMap-object',
       (_, items) => {
-        const map = createMapFromObject(items);
+        const map = ImmutableMap.fromObject(hasher)(items);
 
         expect(map).toBeDefined();
         expectTypeOf(map).toEqualTypeOf<ImmutableMap<ObjectKey, unknown>>();
@@ -134,8 +135,8 @@ describe('map/common', () => {
         [3, 4],
       ];
 
-      const map1 = ImmutableMap<number, number>();
-      const map2 = createMapFromArray(numbers);
+      const map1 = ImmutableMap(hasher)<number, number>();
+      const map2 = ImmutableMap.fromArray(hasher)(numbers);
 
       const actual1 = map1.toArray();
       const actual2 = map2.toArray();
@@ -150,7 +151,7 @@ describe('map/common', () => {
         index * 2,
       ]);
 
-      const map = createMapFromArray(numbers);
+      const map = ImmutableMap.fromArray(hasher)(numbers);
 
       const actual = map.toObject();
 
@@ -167,7 +168,7 @@ describe('map/common', () => {
 
       const expectedArray = numbers.map(([, value]) => value);
 
-      const map = createMapFromArray(numbers);
+      const map = ImmutableMap.fromArray(hasher)(numbers);
 
       const actual = map.toList();
 
@@ -184,7 +185,7 @@ describe('map/common', () => {
 
       const expectedArray = numbers.map(([key]) => key);
 
-      const map = createMapFromArray(numbers);
+      const map = ImmutableMap.fromArray(hasher)(numbers);
 
       const actual = map.toSet();
 
@@ -199,8 +200,8 @@ describe('map/common', () => {
         [3, 4],
       ];
 
-      const map1 = ImmutableMap<number, number>();
-      const map2 = createMapFromArray(numbers);
+      const map1 = ImmutableMap(hasher)<number, number>();
+      const map2 = ImmutableMap.fromArray(hasher)(numbers);
 
       const actual1 = map1.size();
       const actual2 = map2.size();
@@ -215,8 +216,8 @@ describe('map/common', () => {
         [3, 4],
       ];
 
-      const map1 = ImmutableMap<number, number>();
-      const map2 = createMapFromArray(numbers);
+      const map1 = ImmutableMap(hasher)<number, number>();
+      const map2 = ImmutableMap.fromArray(hasher)(numbers);
 
       const actual1 = map1.isEmpty();
       const actual2 = map2.isEmpty();
@@ -231,8 +232,8 @@ describe('map/common', () => {
         [3, 4],
       ];
 
-      const map1 = ImmutableMap<number, number>();
-      const map2 = createMapFromArray(numbers);
+      const map1 = ImmutableMap(hasher)<number, number>();
+      const map2 = ImmutableMap.fromArray(hasher)(numbers);
 
       const actual1 = map1.isNotEmpty();
       const actual2 = map2.isNotEmpty();
@@ -250,8 +251,8 @@ describe('map/common', () => {
       const key = Math.floor(Math.random() * 100) + 4;
       const value = Math.floor(Math.random() * 100);
 
-      const map1 = ImmutableMap<number, number>();
-      const map2 = createMapFromArray(numbers);
+      const map1 = ImmutableMap(hasher)<number, number>();
+      const map2 = ImmutableMap.fromArray(hasher)(numbers);
 
       const actual1 = map1.add(key, value);
       const actual2 = map2.add(key, value);
@@ -274,7 +275,7 @@ describe('map/common', () => {
     it.each(Object.entries(arrayItems))(
       'add returns same ImmutableMap with same key and value',
       (_, items) => {
-        const map = createMapFromArray(items);
+        const map = ImmutableMap.fromArray(hasher)(items);
 
         const actual = items.reduce(
           (carry, [key, value]) => carry.add(key, value),
@@ -295,7 +296,7 @@ describe('map/common', () => {
 
       const [targetKey] = numbers[Math.floor(Math.random() * numbers.length)];
 
-      const map = createMapFromArray(numbers);
+      const map = ImmutableMap.fromArray(hasher)(numbers);
 
       const actual = map.remove(targetKey);
 
@@ -320,7 +321,7 @@ describe('map/common', () => {
 
       const missing = classes.first().get();
 
-      const map = createMapFromArray(classes.drop(1).toArray());
+      const map = ImmutableMap.fromArray(hasher)(classes.drop(1).toArray());
 
       const actual = map.remove(missing[0]);
 
@@ -337,7 +338,7 @@ describe('map/common', () => {
     });
 
     it('remove returns a new empty ImmutableMap if the map is empty', () => {
-      const map = ImmutableMap<number, number>();
+      const map = ImmutableMap(hasher)<number, number>();
 
       const actual = map.remove(1);
 
@@ -357,7 +358,7 @@ describe('map/common', () => {
       const [targetKey, targetValue] =
         numbers[Math.floor(Math.random() * numbers.length)];
 
-      const map = createMapFromArray(numbers);
+      const map = ImmutableMap.fromArray(hasher)(numbers);
 
       const actual = map.get(targetKey);
 
@@ -373,7 +374,7 @@ describe('map/common', () => {
         index * 2,
       ]);
 
-      const map = createMapFromArray(numbers);
+      const map = ImmutableMap.fromArray(hasher)(numbers);
 
       const actual = map.get(100);
 
@@ -383,7 +384,7 @@ describe('map/common', () => {
     });
 
     it('get returns empty Optional with empty map', () => {
-      const map = ImmutableMap<number, number>();
+      const map = ImmutableMap(hasher)<number, number>();
 
       const actual = map.get(1);
 
@@ -403,7 +404,7 @@ describe('map/common', () => {
         0,
       );
 
-      const map = createMapFromArray(numbers);
+      const map = ImmutableMap.fromArray(hasher)(numbers);
 
       const actual = map.reduce((carry, key, value) => carry + key + value, 0);
 
@@ -416,7 +417,7 @@ describe('map/common', () => {
         index * 2,
       ]);
 
-      const map = createMapFromArray(numbers);
+      const map = ImmutableMap.fromArray(hasher)(numbers);
 
       const actual = map.keys();
 
@@ -431,7 +432,7 @@ describe('map/common', () => {
         index * 2,
       ]);
 
-      const map = createMapFromArray(numbers);
+      const map = ImmutableMap.fromArray(hasher)(numbers);
 
       const actual = map.values();
 
@@ -446,7 +447,7 @@ describe('map/common', () => {
         index * 2,
       ]);
 
-      const map = createMapFromArray(numbers);
+      const map = ImmutableMap.fromArray(hasher)(numbers);
 
       numbers.forEach(([key]) => {
         expect(map.contains(key)).toBeTruthy();
@@ -459,7 +460,7 @@ describe('map/common', () => {
         index * 2,
       ]);
 
-      const map = createMapFromArray(numbers);
+      const map = ImmutableMap.fromArray(hasher)(numbers);
 
       expect(map.contains(11)).toBeFalsy();
     });
@@ -470,7 +471,7 @@ describe('map/common', () => {
         index * 2,
       ]);
 
-      const map = createMapFromArray(numbers);
+      const map = ImmutableMap.fromArray(hasher)(numbers);
 
       const actual: [number, number][] = [];
 
@@ -490,7 +491,7 @@ describe('map/common', () => {
       const [targetKey, targetValue] =
         classes[Math.floor(Math.random() * classes.length)];
 
-      const map = createMapFromArray(classes);
+      const map = ImmutableMap.fromArray(hasher)(classes);
 
       const predicate = (key: Std<number>, value: Std<number>) =>
         targetKey === key && targetValue.value === value.value;
@@ -509,7 +510,7 @@ describe('map/common', () => {
         (index) => [new Std(index), new Std(index * 2)],
       );
 
-      const map = createMapFromArray(classes);
+      const map = ImmutableMap.fromArray(hasher)(classes);
 
       const predicate = (key: Std<number>, value: Std<number>) =>
         key.value === 11 && value.value === 22;
@@ -529,7 +530,7 @@ describe('map/common', () => {
         ]),
       );
 
-      const map = createMapFromArray(classes.toArray());
+      const map = ImmutableMap.fromArray(hasher)(classes.toArray());
 
       const target = classes.last().get();
 
@@ -549,7 +550,7 @@ describe('map/common', () => {
         ]),
       );
 
-      const map = createMapFromArray(classes.toArray());
+      const map = ImmutableMap.fromArray(hasher)(classes.toArray());
 
       const predicate = (_: Std<number>, value: Std<number>) =>
         value.value === 1;
@@ -564,8 +565,8 @@ describe('map/common', () => {
         createArrayItems<number, number>(10, (index) => [index, index * 2]),
       );
 
-      const map1 = createMapFromArray(numbers.toArray());
-      const map2 = createMapFromArray(numbers.toArray());
+      const map1 = ImmutableMap.fromArray(hasher)(numbers.toArray());
+      const map2 = ImmutableMap.fromArray(hasher)(numbers.toArray());
 
       const actual1 = map1.equals(map2);
       const actual2 = map2.equals(map1);
@@ -582,8 +583,8 @@ describe('map/common', () => {
         ]),
       );
 
-      const map1 = createMapFromArray(classes.toArray());
-      const map2 = createMapFromArray(classes.toArray());
+      const map1 = ImmutableMap.fromArray(hasher)(classes.toArray());
+      const map2 = ImmutableMap.fromArray(hasher)(classes.toArray());
 
       const callback = (left: Std<number>, right: Std<number>) =>
         left.value === right.value;
@@ -604,8 +605,8 @@ describe('map/common', () => {
         createArrayItems<number, number>(10, (index) => [index, index * 3]),
       );
 
-      const map1 = createMapFromArray(numbers1.toArray());
-      const map2 = createMapFromArray(numbers2.toArray());
+      const map1 = ImmutableMap.fromArray(hasher)(numbers1.toArray());
+      const map2 = ImmutableMap.fromArray(hasher)(numbers2.toArray());
 
       const actual1 = map1.equals(map2);
       const actual2 = map2.equals(map1);
@@ -629,8 +630,8 @@ describe('map/common', () => {
         ]),
       );
 
-      const map1 = createMapFromArray(classes1.toArray());
-      const map2 = createMapFromArray(classes2.toArray());
+      const map1 = ImmutableMap.fromArray(hasher)(classes1.toArray());
+      const map2 = ImmutableMap.fromArray(hasher)(classes2.toArray());
 
       const callback = (left: Std<number>, right: Std<number>) =>
         left.value === right.value;
@@ -651,8 +652,8 @@ describe('map/common', () => {
         createArrayItems<number, number>(20, (index) => [index, index * 3]),
       );
 
-      const map1 = createMapFromArray(numbers1.toArray());
-      const map2 = createMapFromArray(numbers2.toArray());
+      const map1 = ImmutableMap.fromArray(hasher)(numbers1.toArray());
+      const map2 = ImmutableMap.fromArray(hasher)(numbers2.toArray());
 
       const actual1 = map1.equals(map2);
       const actual2 = map2.equals(map1);
@@ -667,7 +668,7 @@ describe('map/common', () => {
         index * 2,
       ]);
 
-      const map = createMapFromArray(numbers);
+      const map = ImmutableMap.fromArray(hasher)(numbers);
 
       const mapper = (key: number, value: number): [number, number] => [
         key,
@@ -693,7 +694,7 @@ describe('map/common', () => {
         index * 2,
       ]);
 
-      const map = createMapFromArray(numbers);
+      const map = ImmutableMap.fromArray(hasher)(numbers);
 
       const mapper = (key: number): number => key * 2;
 
@@ -716,7 +717,7 @@ describe('map/common', () => {
         index * 2,
       ]);
 
-      const map = createMapFromArray(numbers);
+      const map = ImmutableMap.fromArray(hasher)(numbers);
 
       const mapper = (value: number): number => value + 1;
 
@@ -739,7 +740,7 @@ describe('map/common', () => {
         index * 2,
       ]);
 
-      const map = createMapFromArray(numbers);
+      const map = ImmutableMap.fromArray(hasher)(numbers);
 
       const predicate = (key: number, value: number): boolean =>
         key % 2 === 0 && value % 2 === 0;
@@ -766,7 +767,7 @@ describe('map/common', () => {
           index * 2,
         ]);
 
-        const map = createMapFromArray(numbers);
+        const map = ImmutableMap.fromArray(hasher)(numbers);
 
         const actual = map.keySeq();
 
@@ -778,7 +779,7 @@ describe('map/common', () => {
       });
 
       it('returns empty IndexedSequence for empty map', () => {
-        const map = ImmutableMap<string, number>();
+        const map = ImmutableMap(hasher)<string, number>();
 
         const actual = map.keySeq();
 
@@ -788,11 +789,11 @@ describe('map/common', () => {
       });
 
       it('maintains type safety for different key types', () => {
-        const stringMap = createMapFromArray([
+        const stringMap = ImmutableMap.fromArray(hasher)([
           ['key1', 'value1'],
           ['key2', 'value2'],
         ]);
-        const numberMap = createMapFromArray([
+        const numberMap = ImmutableMap.fromArray(hasher)([
           [1, 'one'],
           [2, 'two'],
         ]);
@@ -813,7 +814,7 @@ describe('map/common', () => {
           index * 2,
         ]);
 
-        const map = createMapFromArray(numbers);
+        const map = ImmutableMap.fromArray(hasher)(numbers);
         const keySeq = map.keySeq();
 
         // Test map operation
@@ -827,6 +828,64 @@ describe('map/common', () => {
         // Test first and last
         expect(keySeq.first()).toBe(0);
         expect(keySeq.last()).toBe(4);
+      });
+    });
+
+    describe('Factory Methods', () => {
+      describe('fromArray', () => {
+        it('creates ImmutableMap from array of key-value pairs', () => {
+          const items: [string, number][] = [
+            ['a', 1],
+            ['b', 2],
+            ['c', 3],
+          ];
+
+          const map = ImmutableMap.fromArray(hasher)(items);
+
+          expect(map).toBeDefined();
+          expect(map.size()).toBe(3);
+          expect(map.get('a').get()).toBe(1);
+          expect(map.get('b').get()).toBe(2);
+          expect(map.get('c').get()).toBe(3);
+        });
+
+        it('creates empty map from empty array', () => {
+          const map = ImmutableMap.fromArray(hasher)([]);
+
+          expect(map.isEmpty()).toBe(true);
+          expect(map.size()).toBe(0);
+        });
+      });
+
+      describe('fromObject', () => {
+        it('creates ImmutableMap from object', () => {
+          const obj = { a: 1, b: 2, c: 3 };
+
+          const map = ImmutableMap.fromObject(hasher)(obj);
+
+          expect(map).toBeDefined();
+          expect(map.size()).toBe(3);
+          expect(map.get('a').get()).toBe(1);
+          expect(map.get('b').get()).toBe(2);
+          expect(map.get('c').get()).toBe(3);
+        });
+
+        it('creates empty map from empty object', () => {
+          const map = ImmutableMap.fromObject(hasher)({});
+
+          expect(map.isEmpty()).toBe(true);
+          expect(map.size()).toBe(0);
+        });
+      });
+
+      describe('empty', () => {
+        it('creates empty ImmutableMap', () => {
+          const map = ImmutableMap.empty(hasher)<string, number>();
+
+          expect(map).toBeDefined();
+          expect(map.isEmpty()).toBe(true);
+          expect(map.size()).toBe(0);
+        });
       });
     });
   });

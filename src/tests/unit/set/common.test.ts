@@ -1,23 +1,19 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import {
-  ImmutableList,
-  ImmutableMap,
-  ImmutableSet,
-  createSetFromArray,
-} from '../../..';
+import { ImmutableList, ImmutableMap, ImmutableSet } from '../../..';
+import { Hasher } from '../../../collections/hamt';
 
 describe('set/common', () => {
   describe('ImmutableSet', () => {
     it('should create an ImmutableSet-object', () => {
-      const set1 = ImmutableSet();
+      const set1 = ImmutableSet(Hasher())();
       const set2 = expect(set1).toBeDefined();
       expect(set2).toBeDefined();
     });
 
     it('should create an ImmutableSet-object with a hash function', () => {
-      const set1 = ImmutableSet<number>();
-      const set2 = createSetFromArray([1, 2, 3]);
+      const set1 = ImmutableSet(Hasher())<number>();
+      const set2 = ImmutableSet.fromArray([1, 2, 3]);
 
       expect(set1).toBeDefined();
       expect(set2).toBeDefined();
@@ -32,8 +28,8 @@ describe('set/common', () => {
     it('toArray returns an array of keys', () => {
       const keys: number[] = Array.from({ length: 100 }, (_, index) => index);
 
-      const set1 = createSetFromArray(keys);
-      const set2 = ImmutableSet<number>();
+      const set1 = ImmutableSet.fromArray(keys);
+      const set2 = ImmutableSet(Hasher())<number>();
 
       const actual1 = set1.toArray();
       const actual2 = set2.toArray();
@@ -45,8 +41,8 @@ describe('set/common', () => {
     it('toList returns an ImmutableList of keys', () => {
       const keys: number[] = Array.from({ length: 100 }, (_, index) => index);
 
-      const set1 = createSetFromArray(keys);
-      const set2 = ImmutableSet<number>();
+      const set1 = ImmutableSet.fromArray(keys);
+      const set2 = ImmutableSet(Hasher())<number>();
 
       const actual1 = set1.toList();
       const actual2 = set2.toList();
@@ -63,8 +59,8 @@ describe('set/common', () => {
     it('toMap returns an ImmutableMap of indexed-value', () => {
       const keys: number[] = Array.from({ length: 100 }, (_, index) => index);
 
-      const set1 = createSetFromArray(keys);
-      const set2 = ImmutableSet<number>();
+      const set1 = ImmutableSet.fromArray(keys);
+      const set2 = ImmutableSet(Hasher())<number>();
 
       const actual1 = set1.toMap();
       const actual2 = set2.toMap();
@@ -84,8 +80,8 @@ describe('set/common', () => {
     it('size returns the number of elements in the set', () => {
       const keys: number[] = Array.from({ length: 100 }, (_, index) => index);
 
-      const set1 = createSetFromArray(keys);
-      const set2 = ImmutableSet<number>();
+      const set1 = ImmutableSet.fromArray(keys);
+      const set2 = ImmutableSet(Hasher())<number>();
 
       const actual1 = set1.size();
       const actual2 = set2.size();
@@ -97,8 +93,8 @@ describe('set/common', () => {
     it('isEmpty returns true if the set is empty', () => {
       const keys: number[] = Array.from({ length: 100 }, (_, index) => index);
 
-      const set1 = createSetFromArray(keys);
-      const set2 = ImmutableSet<number>();
+      const set1 = ImmutableSet.fromArray(keys);
+      const set2 = ImmutableSet(Hasher())<number>();
 
       const actual1 = set1.isEmpty();
       const actual2 = set2.isEmpty();
@@ -110,8 +106,8 @@ describe('set/common', () => {
     it('isNotEmpty returns true if the set is not empty', () => {
       const keys: number[] = Array.from({ length: 100 }, (_, index) => index);
 
-      const set1 = createSetFromArray(keys);
-      const set2 = ImmutableSet<number>();
+      const set1 = ImmutableSet.fromArray(keys);
+      const set2 = ImmutableSet(Hasher())<number>();
 
       const actual1 = set1.isNotEmpty();
       const actual2 = set2.isNotEmpty();
@@ -125,7 +121,7 @@ describe('set/common', () => {
 
       const keys: number[] = Array.from({ length: count }, (_, index) => index);
 
-      const set = createSetFromArray(keys);
+      const set = ImmutableSet.fromArray(keys);
 
       const actual = set.add(count + 1);
 
@@ -142,7 +138,7 @@ describe('set/common', () => {
 
       const keys: number[] = Array.from({ length: count }, (_, index) => index);
 
-      const set = createSetFromArray(keys);
+      const set = ImmutableSet.fromArray(keys);
 
       const addedKeys = [count + 1, count + 2, count + 3];
 
@@ -163,7 +159,7 @@ describe('set/common', () => {
 
       const target = keys[Math.floor(Math.random() * keys.length)];
 
-      const set = createSetFromArray(keys);
+      const set = ImmutableSet.fromArray(keys);
 
       const actual = set.remove(target);
 
@@ -180,7 +176,7 @@ describe('set/common', () => {
     });
 
     it('remove returns a new empty ImmutableSet if the set is empty', () => {
-      const set = ImmutableSet<number>();
+      const set = ImmutableSet(Hasher())<number>();
 
       const actual = set.remove(1);
 
@@ -195,7 +191,7 @@ describe('set/common', () => {
 
       const keys: number[] = Array.from({ length: count }, (_, index) => index);
 
-      const set = createSetFromArray(keys);
+      const set = ImmutableSet.fromArray(keys);
 
       keys.forEach((key) => {
         expect(set.contains(key)).toBeTruthy();
@@ -207,7 +203,7 @@ describe('set/common', () => {
 
       const keys: number[] = Array.from({ length: count }, (_, index) => index);
 
-      const set = createSetFromArray(keys);
+      const set = ImmutableSet.fromArray(keys);
 
       expect(set.contains(count + 1)).toBeFalsy();
     });
@@ -216,7 +212,7 @@ describe('set/common', () => {
       const count = Math.floor(Math.random() * 100) + 1;
       const keys: number[] = Array.from({ length: count }, (_, index) => index);
 
-      const set = createSetFromArray(keys);
+      const set = ImmutableSet.fromArray(keys);
 
       const predicate = (key: number): boolean => key % 2 === 0;
 
@@ -231,7 +227,7 @@ describe('set/common', () => {
       const count = Math.floor(Math.random() * 100) + 1;
       const keys: number[] = Array.from({ length: count }, (_, index) => index);
 
-      const set = createSetFromArray(keys);
+      const set = ImmutableSet.fromArray(keys);
 
       const predicate = (key: number): boolean => key > count;
 
@@ -245,7 +241,7 @@ describe('set/common', () => {
 
       const keys: number[] = Array.from({ length: count }, (_, index) => index);
 
-      const set = createSetFromArray(keys);
+      const set = ImmutableSet.fromArray(keys);
 
       const reducer = (carry: number, key: number): number => carry + key;
 
@@ -264,7 +260,7 @@ describe('set/common', () => {
 
       const expectedKeys = keys.map(mapper);
 
-      const set = createSetFromArray(keys);
+      const set = ImmutableSet.fromArray(keys);
 
       const actual = set.map(mapper);
 
@@ -281,7 +277,7 @@ describe('set/common', () => {
 
       const expectedKeys = keys.filter(predicate);
 
-      const set = createSetFromArray(keys);
+      const set = ImmutableSet.fromArray(keys);
 
       const actual = set.filter(predicate);
 
@@ -295,7 +291,7 @@ describe('set/common', () => {
 
       const keys: number[] = Array.from({ length: count }, (_, index) => index);
 
-      const set = createSetFromArray(keys);
+      const set = ImmutableSet.fromArray(keys);
 
       const callback = (key: number): void => {
         expectTypeOf(key).toEqualTypeOf<number>();
@@ -309,8 +305,8 @@ describe('set/common', () => {
 
       const keys: number[] = Array.from({ length: count }, (_, index) => index);
 
-      const set1 = createSetFromArray(keys);
-      const set2 = createSetFromArray(keys);
+      const set1 = ImmutableSet.fromArray(keys);
+      const set2 = ImmutableSet.fromArray(keys);
 
       expect(set1.equals(set2)).toBeTruthy();
     });
@@ -320,8 +316,8 @@ describe('set/common', () => {
 
       const keys: number[] = Array.from({ length: count }, (_, index) => index);
 
-      const set1 = createSetFromArray(keys);
-      const set2 = createSetFromArray([...keys, count + 1]);
+      const set1 = ImmutableSet.fromArray(keys);
+      const set2 = ImmutableSet.fromArray([...keys, count + 1]);
 
       expect(set1.equals(set2)).toBeFalsy();
     });
@@ -331,11 +327,68 @@ describe('set/common', () => {
 
       const keys: number[] = Array.from({ length: count }, (_, index) => index);
 
-      const set = createSetFromArray(keys);
+      const set = ImmutableSet.fromArray(keys);
 
       const predicate = (key: number): boolean => key % 2 === 0;
 
       expect(set.exists(predicate)).toBeTruthy();
+    });
+
+    describe('Factory Methods', () => {
+      describe('fromArray', () => {
+        it('creates ImmutableSet from array', () => {
+          const items = [1, 2, 3, 4, 5, 2, 3]; // including duplicates
+
+          const set = ImmutableSet.fromArray(items);
+
+          expect(set).toBeDefined();
+          expect(set.size()).toBe(5); // duplicates removed
+          expect(set.contains(1)).toBe(true);
+          expect(set.contains(2)).toBe(true);
+          expect(set.contains(3)).toBe(true);
+          expect(set.contains(4)).toBe(true);
+          expect(set.contains(5)).toBe(true);
+        });
+
+        it('creates empty set from empty array', () => {
+          const set = ImmutableSet.fromArray([]);
+
+          expect(set.isEmpty()).toBe(true);
+          expect(set.size()).toBe(0);
+        });
+      });
+
+      describe('of', () => {
+        it('creates ImmutableSet from variadic arguments', () => {
+          const set = ImmutableSet.of(1, 2, 3, 4, 5, 2, 3); // including duplicates
+
+          expect(set).toBeDefined();
+          expect(set.size()).toBe(5); // duplicates removed
+          expect(set.contains(1)).toBe(true);
+          expect(set.contains(2)).toBe(true);
+          expect(set.contains(3)).toBe(true);
+          expect(set.contains(4)).toBe(true);
+          expect(set.contains(5)).toBe(true);
+        });
+
+        it('creates empty set with no arguments', () => {
+          const set = ImmutableSet.of();
+
+          expect(set.isEmpty()).toBe(true);
+          expect(set.size()).toBe(0);
+        });
+      });
+
+      describe('empty', () => {
+        it('creates empty ImmutableSet', () => {
+          const set = ImmutableSet.empty<string>();
+
+          expect(set).toBeDefined();
+          expect(set.isEmpty()).toBe(true);
+          expect(set.size()).toBe(0);
+          expect(set.toArray()).toEqual([]);
+        });
+      });
     });
   });
 });
