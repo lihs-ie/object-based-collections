@@ -1,3 +1,6 @@
+// Initialize conversion helpers first to avoid circular imports
+import './conversion-setup';
+
 export { Optional, NullableOptional, EmptyOptional } from './optional';
 export { Hasher } from './hamt';
 export { ImmutableList } from './list';

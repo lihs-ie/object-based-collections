@@ -6,6 +6,7 @@
 import { type Hasher } from './hamt';
 import { type ImmutableList } from './list/common';
 import { type ImmutableMap } from './map/common';
+import { type IndexedSequence } from './sequence/common';
 import { type ImmutableSet } from './set/common';
 
 // Forward declarations to avoid circular imports
@@ -14,12 +15,14 @@ type SetFactory = (hasher: Hasher) => <T>(values: T[]) => ImmutableSet<T>;
 type MapFactory = (
   hasher: Hasher,
 ) => <K, V>(entries: [K, V][]) => ImmutableMap<K, V>;
+type SequenceFactory = <T>(values?: T[]) => IndexedSequence<T>;
 
 // Conversion functions
 export const createConverters = (
   listFactory: ListFactory,
   setFactory: SetFactory,
   mapFactory: MapFactory,
+  sequenceFactory: SequenceFactory,
 ) => {
   const listToSet =
     <T>(hasher: Hasher) =>
@@ -58,6 +61,23 @@ export const createConverters = (
       return mapFactory(hasher)(entries);
     };
 
+  const setToMapWithKeyMapper =
+    <T, K>(hasher: Hasher, keyMapper: (value: T, index: number) => K) =>
+    (set: ImmutableSet<T>): ImmutableMap<K, T> => {
+      const entries: [K, T][] = set
+        .toArray()
+        .map((item, index) => [keyMapper(item, index), item]);
+      return mapFactory(hasher)(entries);
+    };
+
+  const listToSeq = <T>(list: ImmutableList<T>): IndexedSequence<T> => {
+    return sequenceFactory(list.toArray());
+  };
+
+  const setToSeq = <T>(set: ImmutableSet<T>): IndexedSequence<T> => {
+    return sequenceFactory(set.toArray());
+  };
+
   const mapToList = <K, V>(map: ImmutableMap<K, V>): ImmutableList<V> => {
     return listFactory(map.values());
   };
@@ -72,9 +92,17 @@ export const createConverters = (
     listToSet,
     listToMap,
     listToMapWithKeyMapper,
+    listToSeq,
     setToList,
     setToMap,
+    setToMapWithKeyMapper,
+    setToSeq,
     mapToList,
     mapToSet,
+    // Export factories for direct use
+    listFactory,
+    setFactory,
+    mapFactory,
+    sequenceFactory,
   };
 };

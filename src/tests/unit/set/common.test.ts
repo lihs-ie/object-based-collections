@@ -62,8 +62,8 @@ describe('set/common', () => {
       const set1 = ImmutableSet.fromArray(keys);
       const set2 = ImmutableSet(Hasher())<number>();
 
-      const actual1 = set1.toMap();
-      const actual2 = set2.toMap();
+      const actual1 = set1.toMap(Hasher());
+      const actual2 = set2.toMap(Hasher());
 
       expect(actual1).toBeDefined();
       expectTypeOf(actual1).toEqualTypeOf<ImmutableMap<number, number>>();

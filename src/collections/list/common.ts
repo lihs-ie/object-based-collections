@@ -1,9 +1,21 @@
+import { createConverters } from '../converters';
+import { type Hasher } from '../hamt/hash';
+import { type ImmutableMap } from '../map/common';
 import { NullableOptional } from '../optional';
 import { Optional } from '../optional/common';
+import { type IndexedSequence } from '../sequence/common';
+import { type ImmutableSet } from '../set/common';
 
 export interface ImmutableList<T> {
   size: () => number;
   toArray: () => T[];
+  toSet: (hasher: Hasher) => ImmutableSet<T>;
+  toSeq: () => IndexedSequence<T>;
+  toMap(hasher: Hasher): ImmutableMap<number, T>;
+  toMap<K>(
+    keyMapper: (value: T, index: number) => K,
+    hasher: Hasher,
+  ): ImmutableMap<K, T>;
   addFirst: (value: T) => ImmutableList<T>;
   addFirstAll: (...values: T[]) => ImmutableList<T>;
   addLast: (value: T) => ImmutableList<T>;
@@ -37,6 +49,59 @@ const ImmutableListImpl = <T>(values: T[] = []): ImmutableList<T> => {
   const size = () => items.length;
 
   const toArray = () => [...items];
+
+  const toSet = (hasher: Hasher): ImmutableSet<T> => {
+    // Use the global converters to avoid circular imports
+    const converters = (globalThis as Record<string, unknown>)
+      .__conversionHelpers as ReturnType<typeof createConverters>;
+    if (!converters) {
+      throw new Error('Converters not initialized');
+    }
+    return converters.setFactory(hasher)(toArray());
+  };
+
+  const toSeq = (): IndexedSequence<T> => {
+    const converters = (globalThis as Record<string, unknown>)
+      .__conversionHelpers as ReturnType<typeof createConverters>;
+    if (!converters) {
+      throw new Error('Converters not initialized');
+    }
+    return converters.sequenceFactory(toArray());
+  };
+
+  // Overloaded toMap implementation
+  function toMap(hasher: Hasher): ImmutableMap<number, T>;
+  function toMap<K>(
+    keyMapper: (value: T, index: number) => K,
+    hasher: Hasher,
+  ): ImmutableMap<K, T>;
+  function toMap<K>(
+    hasherOrKeyMapper: Hasher | ((value: T, index: number) => K),
+    hasherParam?: Hasher,
+  ): ImmutableMap<number, T> | ImmutableMap<K, T> {
+    const converters = (globalThis as Record<string, unknown>)
+      .__conversionHelpers as ReturnType<typeof createConverters>;
+    if (!converters) {
+      throw new Error('Converters not initialized');
+    }
+
+    if (typeof hasherOrKeyMapper === 'function' && hasherParam) {
+      // Key mapper version
+      const entries: [K, T][] = toArray().map((item, index) => [
+        hasherOrKeyMapper(item, index),
+        item,
+      ]);
+      return converters.mapFactory(hasherParam)(entries);
+    } else {
+      // Index-based version
+      const h = hasherOrKeyMapper as Hasher;
+      const entries: [number, T][] = toArray().map((item, index) => [
+        index,
+        item,
+      ]);
+      return converters.mapFactory(h)(entries);
+    }
+  }
 
   const addFirst = (value: T): ImmutableList<T> =>
     ImmutableListImpl([value, ...items]);
@@ -170,6 +235,9 @@ const ImmutableListImpl = <T>(values: T[] = []): ImmutableList<T> => {
     isEmpty,
     isNotEmpty,
     toArray,
+    toSet,
+    toSeq,
+    toMap,
     addFirst,
     addFirstAll,
     addLast,

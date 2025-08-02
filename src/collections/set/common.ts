@@ -1,3 +1,4 @@
+import { createConverters } from '../converters';
 import {
   type Hasher,
   HAMTNode,
@@ -6,14 +7,20 @@ import {
   Hasher as HasherFactory,
 } from '../hamt';
 import { ImmutableList } from '../list';
-import { ImmutableMap, MapFromArray } from '../map';
+import { ImmutableMap } from '../map';
 import { NullableOptional, Optional } from '../optional';
+import { IndexedSequence } from '../sequence';
 
 export interface ImmutableSet<K> {
   size: () => number;
   toArray: () => K[];
   toList: () => ImmutableList<K>;
-  toMap: () => ImmutableMap<number, K>;
+  toSeq: () => IndexedSequence<K>;
+  toMap(hasher: Hasher): ImmutableMap<number, K>;
+  toMap<V>(
+    keyMapper: (value: K, index: number) => V,
+    hasher: Hasher,
+  ): ImmutableMap<V, K>;
   isEmpty: () => boolean;
   isNotEmpty: () => boolean;
   add: (key: K) => ImmutableSet<K>;
@@ -37,13 +44,48 @@ const ImmutableSetImpl =
   <K>(root: HAMTNode<K, Void> | null = null): ImmutableSet<K> => {
     const toArray = (): K[] => root?.toArray().map(([key]) => key) || [];
 
-    const toList = (): ImmutableList<K> => ImmutableList(toArray());
+    // Use the global converters to avoid circular imports
+    const converters = (globalThis as Record<string, unknown>)
+      .__conversionHelpers as ReturnType<typeof createConverters>;
+    if (!converters) {
+      throw new Error('Converters not initialized');
+    }
 
-    const toMap = (): ImmutableMap<number, K> => {
-      return MapFromArray(hasher)(
-        toArray().map((item, index) => [index, item]),
-      );
+    const toList = (): ImmutableList<K> => {
+      return converters.listFactory(toArray());
     };
+
+    const toSeq = (): IndexedSequence<K> => {
+      return converters.sequenceFactory(toArray());
+    };
+
+    // Overloaded toMap implementation
+    function toMap(hasher: Hasher): ImmutableMap<number, K>;
+    function toMap<V>(
+      keyMapper: (value: K, index: number) => V,
+      hasher: Hasher,
+    ): ImmutableMap<V, K>;
+    function toMap<V>(
+      hasherOrKeyMapper: Hasher | ((value: K, index: number) => V),
+      hasherParam?: Hasher,
+    ): ImmutableMap<number, K> | ImmutableMap<V, K> {
+      if (typeof hasherOrKeyMapper === 'function' && hasherParam) {
+        // Key mapper version
+        const entries: [V, K][] = toArray().map((item, index) => [
+          hasherOrKeyMapper(item, index),
+          item,
+        ]);
+        return converters.mapFactory(hasherParam)(entries);
+      } else {
+        // Index-based version
+        const h = hasherOrKeyMapper as Hasher;
+        const entries: [number, K][] = toArray().map((item, index) => [
+          index,
+          item,
+        ]);
+        return converters.mapFactory(h)(entries);
+      }
+    }
 
     const size = (): number => toArray().length;
 
@@ -138,6 +180,7 @@ const ImmutableSetImpl =
       size,
       toArray,
       toList,
+      toSeq,
       toMap,
       isEmpty,
       isNotEmpty,
