@@ -1,3 +1,8 @@
+import type { createConverters } from '../converters';
+import type { Hasher } from '../hamt/hash';
+import type { ImmutableList } from '../list/common';
+import type { ImmutableSet } from '../set/common';
+
 export interface IndexedSequence<T> {
   size: () => number;
   toArray: () => T[];
@@ -17,6 +22,8 @@ export interface IndexedSequence<T> {
   slice: (begin?: number, end?: number) => IndexedSequence<T>;
   take: (amount: number) => IndexedSequence<T>;
   skip: (amount: number) => IndexedSequence<T>;
+  toList: () => ImmutableList<T>;
+  toSet: (hasher: Hasher) => ImmutableSet<T>;
 }
 
 export const IndexedSequence = <T>(values: T[] = []): IndexedSequence<T> => {
@@ -85,6 +92,24 @@ export const IndexedSequence = <T>(values: T[] = []): IndexedSequence<T> => {
     return IndexedSequence(items.slice(amount));
   };
 
+  const toList = (): ImmutableList<T> => {
+    const converters = (globalThis as Record<string, unknown>)
+      .__conversionHelpers as ReturnType<typeof createConverters>;
+    if (!converters) {
+      throw new Error('Converters not initialized');
+    }
+    return converters.listFactory(toArray());
+  };
+
+  const toSet = (hasher: Hasher): ImmutableSet<T> => {
+    const converters = (globalThis as Record<string, unknown>)
+      .__conversionHelpers as ReturnType<typeof createConverters>;
+    if (!converters) {
+      throw new Error('Converters not initialized');
+    }
+    return converters.setFactory(hasher)(toArray());
+  };
+
   return {
     size,
     toArray,
@@ -102,5 +127,7 @@ export const IndexedSequence = <T>(values: T[] = []): IndexedSequence<T> => {
     slice,
     take,
     skip,
+    toList,
+    toSet,
   };
 };
