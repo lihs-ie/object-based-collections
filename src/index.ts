@@ -18,4 +18,6 @@ export {
   EmptyOptional,
   ImmutableList,
   IndexedSequence,
+  ImmutableQueue,
+  ImmutableStack,
 } from './collections';
