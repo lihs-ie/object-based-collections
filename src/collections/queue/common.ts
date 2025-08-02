@@ -8,7 +8,7 @@ export interface ImmutableQueue<T> {
   isEmpty(): boolean;
   size(): number;
   toArray(): T[];
-  forEach(fn: (item: T, index: number) => void): void;
+  foreach(fn: (item: T, index: number) => void): void;
 }
 
 export interface ImmutableQueueConstructor {
@@ -51,7 +51,7 @@ const ImmutableQueueImpl = <T>(items: T[] = []): ImmutableQueue<T> => {
       return list.toArray();
     },
 
-    forEach(fn: (item: T, index: number) => void): void {
+    foreach(fn: (item: T, index: number) => void): void {
       list.foreach((item, index) => fn(item, index));
     },
   };

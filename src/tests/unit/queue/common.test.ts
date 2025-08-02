@@ -110,11 +110,11 @@ describe('ImmutableQueue', () => {
       expect(array).not.toBe(queue.toArray());
     });
 
-    it('should iterate with forEach', () => {
+    it('should iterate with foreach', () => {
       const queue = ImmutableQueue.fromArray(['a', 'b', 'c']);
       const collected: [string, number][] = [];
 
-      queue.forEach((item, index) => {
+      queue.foreach((item, index) => {
         collected.push([item, index]);
       });
 

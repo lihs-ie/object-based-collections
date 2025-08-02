@@ -8,7 +8,7 @@ export interface ImmutableStack<T> {
   isEmpty(): boolean;
   size(): number;
   toArray(): T[];
-  forEach(fn: (item: T, index: number) => void): void;
+  foreach(fn: (item: T, index: number) => void): void;
 }
 
 export interface ImmutableStackConstructor {
@@ -51,7 +51,7 @@ const ImmutableStackImpl = <T>(items: T[] = []): ImmutableStack<T> => {
       return list.toArray();
     },
 
-    forEach(fn: (item: T, index: number) => void): void {
+    foreach(fn: (item: T, index: number) => void): void {
       list.foreach((item, index) => fn(item, index));
     },
   };

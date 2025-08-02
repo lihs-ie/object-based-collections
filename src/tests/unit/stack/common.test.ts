@@ -111,11 +111,11 @@ describe('ImmutableStack', () => {
       expect(array).not.toBe(stack.toArray());
     });
 
-    it('should iterate with forEach', () => {
+    it('should iterate with foreach', () => {
       const stack = ImmutableStack.fromArray(['a', 'b', 'c']);
       const collected: [string, number][] = [];
 
-      stack.forEach((item, index) => {
+      stack.foreach((item, index) => {
         collected.push([item, index]);
       });
 

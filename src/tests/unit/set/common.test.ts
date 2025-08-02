@@ -297,7 +297,7 @@ describe('set/common', () => {
         expectTypeOf(key).toEqualTypeOf<number>();
       };
 
-      set.forEach(callback);
+      set.foreach(callback);
     });
 
     it('equals returns true if the sets are equal', () => {

@@ -8,7 +8,7 @@ export interface IndexedSequence<T> {
   ) => IndexedSequence<T>;
   first: () => T | undefined;
   last: () => T | undefined;
-  forEach: (callback: (value: T, index: number) => void) => void;
+  foreach: (callback: (value: T, index: number) => void) => void;
   find: (predicate: (value: T, index: number) => boolean) => T | undefined;
   includes: (value: T) => boolean;
   isEmpty: () => boolean;
@@ -51,7 +51,7 @@ export const IndexedSequence = <T>(values: T[] = []): IndexedSequence<T> => {
 
   const last = (): T | undefined => items[items.length - 1];
 
-  const forEach = (callback: (value: T, index: number) => void): void => {
+  const foreach = (callback: (value: T, index: number) => void): void => {
     items.forEach((value, index) => callback(value, index));
   };
 
@@ -93,7 +93,7 @@ export const IndexedSequence = <T>(values: T[] = []): IndexedSequence<T> => {
     filter,
     first,
     last,
-    forEach,
+    foreach,
     find,
     includes,
     isEmpty,

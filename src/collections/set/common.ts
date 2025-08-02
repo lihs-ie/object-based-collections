@@ -24,7 +24,7 @@ export interface ImmutableSet<K> {
   reduce: <R>(callback: (accumulator: R, key: K) => R, initial: R) => R;
   map: <R>(mapper: (key: K) => R) => ImmutableSet<R>;
   filter: (predicate: (key: K) => boolean) => ImmutableSet<K>;
-  forEach: (callback: (key: K) => void) => void;
+  foreach: (callback: (key: K) => void) => void;
   equals: (other: ImmutableSet<K>) => boolean;
   exists: (predicate: (key: K) => boolean) => boolean;
 }
@@ -116,7 +116,7 @@ const ImmutableSetImpl =
       return fromArrayImpl(hasher)(filtered);
     };
 
-    const forEach = (callback: (key: K) => void): void => {
+    const foreach = (callback: (key: K) => void): void => {
       const items = toArray();
 
       items.forEach((key): void => callback(key));
@@ -149,7 +149,7 @@ const ImmutableSetImpl =
       reduce,
       map,
       filter,
-      forEach,
+      foreach,
       equals,
       exists,
     };
